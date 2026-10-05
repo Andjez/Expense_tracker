@@ -464,6 +464,45 @@ function renderCategories() {
     });
 }
 
+/* =========================================================
+   SETTINGS - CATEGORY MANAGEMENT
+========================================================= */
+
+const categoryIcons = [
+    "🍔",
+    "🛒",
+    "🏠",
+    "🚗",
+    "⛽",
+    "💊",
+    "🎓",
+    "🎮",
+    "🎬",
+    "✈️",
+    "👕",
+    "💻",
+    "📱",
+    "💡",
+    "🔧",
+    "🐶",
+    "🎁",
+    "💰",
+    "🍽️",
+    "☕",
+    "🏋️",
+    "🏦",
+    "📦",
+    "💳",
+    "🧾"
+];
+
+let editingCategoryId = null;
+
+
+/* =========================================================
+   SETTINGS CATEGORY LIST
+========================================================= */
+
 function renderSettingsCategories() {
 
     const container =
@@ -476,6 +515,7 @@ function renderSettingsCategories() {
     container.innerHTML = "";
 
     if (!categories.length) {
+
         container.innerHTML = `
             <div class="empty-state">
                 No categories yet.
@@ -490,32 +530,409 @@ function renderSettingsCategories() {
         const item =
             document.createElement("div");
 
-        item.className = "settings-category-item";
-
-        const info =
-            document.createElement("div");
-
-        info.className = "settings-category-info";
+        item.className =
+            "settings-category-item";
 
         const icon =
             document.createElement("span");
 
-        icon.className = "settings-category-icon";
-        icon.textContent = category.icon || "📦";
+        icon.className =
+            "settings-category-icon";
+
+        icon.textContent =
+            category.icon || "📦";
 
         const name =
             document.createElement("span");
 
-        name.className = "settings-category-name";
-        name.textContent = category.name;
+        name.className =
+            "settings-category-name";
 
-        info.appendChild(icon);
-        info.appendChild(name);
+        name.textContent =
+            category.name;
 
-        item.appendChild(info);
+        const actions =
+            document.createElement("div");
+
+        actions.className =
+            "settings-category-actions";
+
+
+        /* Edit */
+
+        const editButton =
+            document.createElement("button");
+
+        editButton.type = "button";
+
+        editButton.className =
+            "settings-category-action";
+
+        editButton.textContent = "✏️";
+
+        editButton.title =
+            `Edit ${category.name}`;
+
+        editButton.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                openCategoryModal(category);
+            }
+        );
+
+
+        /* Delete */
+
+        const deleteButton =
+            document.createElement("button");
+
+        deleteButton.type = "button";
+
+        deleteButton.className =
+            "settings-category-action";
+
+        deleteButton.textContent = "🗑️";
+
+        deleteButton.title =
+            `Delete ${category.name}`;
+
+        deleteButton.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                deleteCategory(category);
+            }
+        );
+
+
+        actions.appendChild(editButton);
+        actions.appendChild(deleteButton);
+
+        item.appendChild(icon);
+        item.appendChild(name);
+        item.appendChild(actions);
 
         container.appendChild(item);
     });
+}
+
+
+/* =========================================================
+   CATEGORY ICON PICKER
+========================================================= */
+
+function renderCategoryIconPicker(selectedIcon = "📦") {
+
+    const container =
+        document.getElementById("categoryIconPicker");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    categoryIcons.forEach(icon => {
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+
+        button.className =
+            "category-icon-option";
+
+        button.textContent =
+            icon;
+
+        if (icon === selectedIcon) {
+            button.classList.add("selected");
+        }
+
+        button.addEventListener("click", () => {
+
+            document
+                .querySelectorAll(".category-icon-option")
+                .forEach(item => {
+                    item.classList.remove("selected");
+                });
+
+            button.classList.add("selected");
+
+            document
+                .getElementById("selectedCategoryIcon")
+                .value = icon;
+        });
+
+        container.appendChild(button);
+    });
+
+    document
+        .getElementById("selectedCategoryIcon")
+        .value = selectedIcon;
+}
+
+
+/* =========================================================
+   OPEN CATEGORY MODAL
+========================================================= */
+
+function openCategoryModal(category = null) {
+
+    const modal =
+        document.getElementById("categoryModal");
+
+    const title =
+        document.getElementById("categoryModalTitle");
+
+    const nameInput =
+        document.getElementById("categoryName");
+
+    const saveButton =
+        document.getElementById("saveCategoryButton");
+
+    const error =
+        document.getElementById("categoryFormError");
+
+    if (!modal) {
+        return;
+    }
+
+    error.textContent = "";
+
+    if (category) {
+
+        editingCategoryId =
+            category.id;
+
+        title.textContent =
+            "Edit Category";
+
+        saveButton.textContent =
+            "Save Changes";
+
+        nameInput.value =
+            category.name || "";
+
+        renderCategoryIconPicker(
+            category.icon || "📦"
+        );
+
+    } else {
+
+        editingCategoryId = null;
+
+        title.textContent =
+            "Add Category";
+
+        saveButton.textContent =
+            "Add Category";
+
+        nameInput.value = "";
+
+        renderCategoryIconPicker("📦");
+    }
+
+    modal.classList.remove("hidden");
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    setTimeout(() => {
+        nameInput.focus();
+    }, 50);
+}
+
+
+/* =========================================================
+   CLOSE CATEGORY MODAL
+========================================================= */
+
+function closeCategoryModal() {
+
+    const modal =
+        document.getElementById("categoryModal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+    editingCategoryId = null;
+
+    document
+        .getElementById("categoryFormError")
+        .textContent = "";
+}
+
+
+/* =========================================================
+   SAVE CATEGORY
+========================================================= */
+
+async function saveCategory(event) {
+
+    event.preventDefault();
+
+    const nameInput =
+        document.getElementById("categoryName");
+
+    const iconInput =
+        document.getElementById("selectedCategoryIcon");
+
+    const errorElement =
+        document.getElementById("categoryFormError");
+
+    const saveButton =
+        document.getElementById("saveCategoryButton");
+
+    const name =
+        nameInput.value.trim();
+
+    const icon =
+        iconInput.value || "📦";
+
+    errorElement.textContent = "";
+
+    if (!name) {
+
+        errorElement.textContent =
+            "Please enter a category name.";
+
+        nameInput.focus();
+
+        return;
+    }
+
+    saveButton.disabled = true;
+
+    saveButton.textContent =
+        editingCategoryId
+            ? "Saving..."
+            : "Adding...";
+
+    try {
+
+        if (editingCategoryId) {
+
+            const {
+                error
+            } = await supabaseClient
+                .from("categories")
+                .update({
+                    name,
+                    icon
+                })
+                .eq(
+                    "id",
+                    editingCategoryId
+                );
+
+            if (error) {
+                throw error;
+            }
+
+        } else {
+
+            const {
+                error
+            } = await supabaseClient
+                .from("categories")
+                .insert({
+                    name,
+                    icon
+                });
+
+            if (error) {
+                throw error;
+            }
+        }
+
+        await loadCategories();
+
+        closeCategoryModal();
+
+    } catch (error) {
+
+        console.error(
+            "Category save error:",
+            error
+        );
+
+        errorElement.textContent =
+            error.message ||
+            "Unable to save category.";
+
+    } finally {
+
+        saveButton.disabled = false;
+
+        saveButton.textContent =
+            editingCategoryId
+                ? "Save Changes"
+                : "Add Category";
+    }
+}
+
+
+/* =========================================================
+   DELETE CATEGORY
+========================================================= */
+
+async function deleteCategory(category) {
+
+    const confirmed =
+        window.confirm(
+            `Delete "${category.name}"?`
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const {
+            error
+        } = await supabaseClient
+            .from("categories")
+            .delete()
+            .eq(
+                "id",
+                category.id
+            );
+
+        if (error) {
+            throw error;
+        }
+
+        await loadCategories();
+
+    } catch (error) {
+
+        console.error(
+            "Category delete error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to delete category."
+        );
+    }
 }
 
 
@@ -1508,6 +1925,7 @@ async function startApp() {
     updateDateDisplay();
 
 await loadCategories();
+setupCategorySettings();
 await loadSavedTheme();
 await loadSavedDataView();
 await setupDataViewOptions();
@@ -1684,6 +2102,131 @@ expenseModal.addEventListener(
 // =========================
 // Helpers
 // =========================
+function setupCategorySettings() {
+
+    const toggle =
+        document.getElementById("categoriesToggle");
+
+    const panel =
+        document.getElementById("settingsCategoryPanel");
+
+    const addButton =
+        document.getElementById("addCategoryButton");
+
+    const closeButton =
+        document.getElementById("categoryModalClose");
+
+    const modal =
+        document.getElementById("categoryModal");
+
+    const form =
+        document.getElementById("categoryForm");
+
+
+    /* Categories expandable tab */
+
+    if (toggle && panel) {
+
+        toggle.addEventListener("click", () => {
+
+            const isOpen =
+                !panel.classList.contains("hidden");
+
+            if (isOpen) {
+
+                panel.classList.add("hidden");
+
+                toggle.classList.remove("open");
+
+                toggle.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            } else {
+
+                panel.classList.remove("hidden");
+
+                toggle.classList.add("open");
+
+                toggle.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
+            }
+        });
+    }
+
+
+    /* Add */
+
+    if (addButton) {
+
+        addButton.addEventListener(
+            "click",
+            () => {
+                openCategoryModal();
+            }
+        );
+    }
+
+
+    /* Close */
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            closeCategoryModal
+        );
+    }
+
+
+    /* Save */
+
+    if (form) {
+
+        form.addEventListener(
+            "submit",
+            saveCategory
+        );
+    }
+
+
+    /* Click outside modal */
+
+    if (modal) {
+
+        modal.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target === modal
+                ) {
+                    closeCategoryModal();
+                }
+            }
+        );
+    }
+
+
+    /* Escape */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape" &&
+                modal &&
+                !modal.classList.contains("hidden")
+            ) {
+                closeCategoryModal();
+            }
+        }
+    );
+}
 function applyTheme(theme) {
   document.body.classList.remove("dark-theme");
 
