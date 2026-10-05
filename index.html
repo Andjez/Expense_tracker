@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Expenses</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <!-- Registration Screen -->
+    <section id="registrationScreen" class="registration-screen hidden">
+        <div class="registration-card">
+
+            <h1>Our Expenses</h1>
+            <p class="registration-subtitle">Who are you?</p>
+
+            <div id="userChoices" class="user-choices"></div>
+
+            <div id="pinSection" class="pin-section hidden">
+                <label for="householdPin">Household PIN</label>
+
+                <input
+                    type="password"
+                    id="householdPin"
+                    inputmode="numeric"
+                    maxlength="6"
+                    placeholder="Enter 6-digit PIN"
+                >
+
+                <button id="registerButton" class="primary-button">
+                    Continue
+                </button>
+
+                <p id="registrationError" class="error-message"></p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- Main App -->
+    <div id="app" class="app hidden">
+
+        <header class="app-header">
+            <h1>Our Expenses</h1>
+        </header>
+<main>
+
+    <!-- Today Screen -->
+    <section id="todayScreen" class="app-screen">
+<div id="appLoading" class="app-loading hidden">
+  <div class="app-loading-spinner"></div>
+  <span>Loading...</span>
+</div>
+        <section class="date-navigation">
+
+            <button id="previousDay" class="date-button">
+                ‹
+            </button>
+
+            <div>
+                <div id="currentDate" class="current-date"></div>
+                <div id="todayLabel" class="today-label"></div>
+            </div>
+
+            <button id="nextDay" class="date-button">
+                ›
+            </button>
+
+        </section>
+
+
+        <section class="total-card">
+            <span>Total</span>
+            <strong id="dayTotal">₹0</strong>
+        </section>
+
+
+        <section class="expenses-section">
+
+            <div class="section-header">
+                <h2>Expenses</h2>
+                <span id="expenseCount">0</span>
+            </div>
+
+            <div id="expenseList" class="expense-list">
+
+                <div class="empty-state">
+                    No expenses for this day.
+                </div>
+
+            </div>
+
+        </section>
+
+    </section>
+
+
+    <!-- Calendar Screen -->
+    <section id="calendarScreen" class="app-screen hidden">
+
+        <div class="calendar-header">
+
+            <button
+                id="previousMonth"
+                class="month-button"
+                type="button"
+            >
+                ‹
+            </button>
+
+            <h2 id="calendarMonth"></h2>
+
+            <button
+                id="nextMonth"
+                class="month-button"
+                type="button"
+            >
+                ›
+            </button>
+
+        </div>
+
+
+        <div class="calendar-weekdays">
+
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+
+        </div>
+
+
+        <div
+            id="calendarGrid"
+            class="calendar-grid"
+        ></div>
+
+
+        <button
+            id="calendarTodayButton"
+            class="calendar-today-button"
+            type="button"
+        >
+            Go to Today
+        </button>
+
+    </section>
+<section id="reportsScreen" class="app-screen hidden">
+  <section class="reports-header">
+    <h2>Reports</h2>
+    <p>See where your money is going.</p>
+  </section>
+
+<section class="report-card monthly-summary-card">
+
+  <div class="monthly-summary-top">
+    <div>
+      <span>This Month</span>
+      <strong id="reportMonthTotal">₹0</strong>
+    </div>
+
+    <div class="monthly-summary-icon">
+      📊
+    </div>
+  </div>
+
+  <div class="monthly-summary-stats">
+
+    <div class="monthly-stat">
+      <span>Transactions</span>
+      <strong id="reportTransactionCount">0</strong>
+    </div>
+
+    <div class="monthly-stat">
+      <span>Daily Average</span>
+      <strong id="reportDailyAverage">₹0</strong>
+    </div>
+
+    <div class="monthly-stat">
+      <span>Highest Day</span>
+      <strong id="reportHighestDay">₹0</strong>
+    </div>
+
+  </div>
+
+</section>
+
+<section class="report-card daily-spending-card">
+
+  <div class="report-section-title">
+    <h3>Daily Spending</h3>
+    <span>This Month</span>
+  </div>
+
+  <div class="daily-chart-wrapper">
+    <canvas id="dailySpendingChart"></canvas>
+  </div>
+
+</section>
+
+<section class="report-card category-report-card">
+
+  <div class="report-section-title">
+    <h3>Spending by Category</h3>
+    <span>This Month</span>
+  </div>
+
+  <div class="category-chart-wrapper">
+    <canvas id="categoryPieChart"></canvas>
+  </div>
+
+  <div id="categoryReportList" class="report-list">
+    <div class="empty-state">No expenses yet.</div>
+  </div>
+
+</section>
+
+<section class="report-card person-report-card">
+
+  <div class="report-section-title">
+    <h3>Who Spent More?</h3>
+    <span>This Month</span>
+  </div>
+
+  <div id="personReportList" class="person-report-list">
+    <div class="empty-state">No expenses yet.</div>
+  </div>
+
+<div id="personDifference" class="person-difference"></div>
+
+</section>
+
+</section>
+
+<!-- Settings Screen -->
+<section id="settingsScreen" class="app-screen hidden">
+
+  <section class="settings-header">
+    <h2>Settings</h2>
+    <p>Customize your household expense tracker.</p>
+  </section>
+
+  <section class="settings-card">
+
+    <div class="settings-section">
+      <div>
+        <strong>Theme</strong>
+        <span>Choose how the app looks on this device.</span>
+      </div>
+
+      <select id="themeSelect" class="settings-select">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+<div class="settings-section settings-view-section">
+
+  <div>
+    <strong>View Data</strong>
+    <span>Choose whose expenses you want to see.</span>
+  </div>
+
+<select id="dataViewSelect" class="settings-select">
+    <option value="both">Both</option>
+    <option value="me">Me</option>
+    <option value="other">Other</option>
+</select>
+
+</div>
+  </section>
+
+</section>
+
+</main>
+        
+
+        <button id="addExpenseButton" class="add-expense-button">
+            + Add Expense
+        </button>
+
+
+        <nav class="bottom-nav">
+
+            <button class="nav-item active" data-tab="today">
+                <span>🏠</span>
+                <small>Today</small>
+            </button>
+
+            <button class="nav-item" data-tab="calendar">
+                <span>📅</span>
+                <small>Calendar</small>
+            </button>
+
+            <button class="nav-item" data-tab="reports">
+                <span>📊</span>
+                <small>Reports</small>
+            </button>
+
+            <button class="nav-item" data-tab="settings">
+                <span>⚙️</span>
+                <small>Settings</small>
+            </button>
+
+        </nav>
+
+    </div>
+
+
+    <!-- Add Expense Modal -->
+    <div id="expenseModal" class="modal hidden">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h2>Add Expense</h2>
+                <button id="closeModalButton" class="close-button">×</button>
+            </div>
+
+            <form id="expenseForm">
+
+                <label for="amount">Amount</label>
+
+                <input
+                    type="number"
+                    id="amount"
+                    min="0.01"
+                    step="0.01"
+                    inputmode="decimal"
+                    placeholder="₹0"
+                    required
+                >
+
+
+                <label>Category</label>
+
+                <div id="categoryGrid" class="category-grid"></div>
+
+
+                <label for="note">Note <span>(optional)</span></label>
+
+                <input
+                    type="text"
+                    id="note"
+                    maxlength="200"
+                    placeholder="What was this for?"
+                >
+
+
+                <label for="expenseDate">Date</label>
+
+                <input
+                    type="date"
+                    id="expenseDate"
+                    required
+                >
+
+
+                <button type="submit" class="primary-button">
+                    Save Expense
+                </button>
+
+                <p id="expenseError" class="error-message"></p>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <script src="app.js"></script>
+
+</body>
+</html>
