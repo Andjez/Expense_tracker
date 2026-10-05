@@ -487,48 +487,34 @@ function renderSettingsCategories() {
 
     categories.forEach(category => {
 
-        const row =
+        const item =
             document.createElement("div");
 
-        row.className = "settings-category-row";
+        item.className = "settings-category-item";
 
-        row.innerHTML = `
-            <div class="settings-category-info">
+        const info =
+            document.createElement("div");
 
-                <span class="settings-category-icon">
-                    ${escapeHtml(category.icon || "📦")}
-                </span>
+        info.className = "settings-category-info";
 
-                <span class="settings-category-name">
-                    ${escapeHtml(category.name)}
-                </span>
+        const icon =
+            document.createElement("span");
 
-            </div>
+        icon.className = "settings-category-icon";
+        icon.textContent = category.icon || "📦";
 
-            <div class="settings-category-actions">
+        const name =
+            document.createElement("span");
 
-                <button
-                    type="button"
-                    class="settings-category-edit"
-                    data-category-id="${category.id}"
-                    aria-label="Edit ${escapeHtml(category.name)}"
-                >
-                    ✏️
-                </button>
+        name.className = "settings-category-name";
+        name.textContent = category.name;
 
-                <button
-                    type="button"
-                    class="settings-category-delete"
-                    data-category-id="${category.id}"
-                    aria-label="Delete ${escapeHtml(category.name)}"
-                >
-                    🗑️
-                </button>
+        info.appendChild(icon);
+        info.appendChild(name);
 
-            </div>
-        `;
+        item.appendChild(info);
 
-        container.appendChild(row);
+        container.appendChild(item);
     });
 }
 
