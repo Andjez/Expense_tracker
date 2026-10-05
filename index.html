@@ -253,45 +253,49 @@
 </section>
 
 <!-- Settings Screen -->
+<!-- Settings Screen -->
 <section id="settingsScreen" class="app-screen hidden">
 
-  <section class="settings-header">
-    <h2>Settings</h2>
-    <p>Customize your household expense tracker.</p>
-  </section>
+    <section class="settings-header">
+        <h2>Settings</h2>
+        <p>Customize your household expense tracker.</p>
+    </section>
 
-  <section class="settings-card">
-
-    <div class="settings-section">
-      <div>
-        <strong>Theme</strong>
-        <span>Choose how the app looks on this device.</span>
-      </div>
-
-      <select id="themeSelect" class="settings-select">
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </div>
-<div class="settings-section settings-view-section">
-
-  <div>
-    <strong>View Data</strong>
-    <span>Choose whose expenses you want to see.</span>
-  </div>
-
-<select id="dataViewSelect" class="settings-select">
-    <option value="both">Both</option>
-    <option value="me">Me</option>
-    <option value="other">Other</option>
-</select>
-
-</div>
-    
-    <!-- New Categories -->
     <section class="settings-card">
 
+        <!-- Theme -->
+        <div class="settings-section">
+            <div>
+                <strong>Theme</strong>
+                <span>Choose how the app looks on this device.</span>
+            </div>
+
+            <select id="themeSelect" class="settings-select">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+            </select>
+        </div>
+
+
+        <!-- View Data -->
+        <div class="settings-section settings-view-section">
+
+            <div>
+                <strong>View Data</strong>
+                <span>Choose whose expenses you want to see.</span>
+            </div>
+
+            <select id="dataViewSelect" class="settings-select">
+                <option value="both">Both</option>
+                <option value="me">Me</option>
+                <option value="other">Other</option>
+            </select>
+
+        </div>
+
+
+        <!-- Categories -->
         <div class="settings-section settings-section-column">
 
             <div>
@@ -309,7 +313,10 @@
 
         </div>
 
-        <div id="settingsCategoryList" class="settings-category-list"></div>
+        <div
+            id="settingsCategoryList"
+            class="settings-category-list"
+        ></div>
 
     </section>
 
