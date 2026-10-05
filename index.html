@@ -290,26 +290,59 @@
             </select>
         </div>
 
-        <!-- Categories -->
-        <div class="settings-section settings-section-column">
-            <div>
-                <strong>Categories</strong>
-                <span>Create and manage your expense categories.</span>
-            </div>
+<!-- Categories -->
+        <div class="settings-category-tab">
 
             <button
-                id="addCategoryButton"
-                class="primary-button settings-action-button"
+                id="categoriesToggle"
+                class="settings-category-toggle"
                 type="button"
+                aria-expanded="false"
+                aria-controls="settingsCategoryPanel"
             >
-                + Add Category
-            </button>
-        </div>
+                <div>
+                    <strong>Categories</strong>
+                    <span>Manage your expense categories.</span>
+                </div>
 
-        <div
-            id="settingsCategoryList"
-            class="settings-category-list"
-        ></div>
+                <span
+                    id="categoriesToggleIcon"
+                    class="settings-category-toggle-icon"
+                >
+                    ›
+                </span>
+            </button>
+
+            <div
+                id="settingsCategoryPanel"
+                class="settings-category-panel hidden"
+            >
+
+                <div class="settings-category-panel-header">
+
+                    <div>
+                        <strong>Your Categories</strong>
+                        <span>Select from your existing categories.</span>
+                    </div>
+
+                </div>
+
+                <div
+                    id="settingsCategoryList"
+                    class="settings-category-grid"
+                ></div>
+
+                <button
+                    id="addCategoryButton"
+                    class="primary-button settings-action-button"
+                    type="button"
+                >
+                    + Add Category
+                </button>
+
+            </div>
+
+        </div>
 
     </section>
 
