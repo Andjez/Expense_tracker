@@ -2130,3 +2130,388 @@ body.dark-theme .error-message {
 .settings-category-inactive {
     opacity: 0.5;
 }
+
+/* =========================================================
+   SETTINGS - CATEGORIES
+========================================================= */
+
+.settings-category-tab {
+    border-top: 1px solid #eee;
+}
+
+.settings-category-toggle {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 18px 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.settings-category-toggle > div {
+    min-width: 0;
+}
+
+.settings-category-toggle strong {
+    display: block;
+
+    font-size: 15px;
+    font-weight: 650;
+}
+
+.settings-category-toggle span:not(.settings-category-toggle-icon) {
+    display: block;
+
+    margin-top: 4px;
+
+    font-size: 11px;
+    line-height: 1.4;
+
+    color: #888;
+}
+
+.settings-category-toggle-icon {
+    width: 30px;
+    height: 30px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f3f3f3;
+
+    font-size: 23px;
+    line-height: 1;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+
+.settings-category-toggle.open
+.settings-category-toggle-icon {
+    transform: rotate(90deg);
+
+    background: #e9e9e9;
+}
+
+.settings-category-panel {
+    padding: 0 0 18px;
+}
+
+.settings-category-panel.hidden {
+    display: none;
+}
+
+.settings-category-panel-header {
+    margin-bottom: 12px;
+}
+
+.settings-category-panel-header strong {
+    display: block;
+
+    font-size: 14px;
+    font-weight: 650;
+}
+
+.settings-category-panel-header span {
+    display: block;
+
+    margin-top: 3px;
+
+    font-size: 11px;
+
+    color: #888;
+}
+
+
+/* Category grid */
+
+.settings-category-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 8px;
+
+    margin-bottom: 14px;
+}
+
+.settings-category-item {
+    position: relative;
+
+    min-height: 82px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    padding: 10px 6px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 12px;
+
+    background: #fff;
+
+    text-align: center;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease;
+}
+
+.settings-category-item:hover {
+    border-color: #bbb;
+}
+
+.settings-category-icon {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #f3f3f3;
+
+    font-size: 21px;
+}
+
+.settings-category-name {
+    max-width: 100%;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+/* Category actions */
+
+.settings-category-actions {
+    position: absolute;
+
+    top: 4px;
+    right: 4px;
+
+    display: flex;
+
+    gap: 2px;
+}
+
+.settings-category-action {
+    width: 24px;
+    height: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 6px;
+
+    background: rgba(255, 255, 255, 0.9);
+
+    font-size: 12px;
+
+    cursor: pointer;
+}
+
+.settings-category-action:hover {
+    background: #eee;
+}
+
+
+/* Add button */
+
+.settings-action-button {
+    width: 100%;
+
+    margin-top: 2px;
+}
+
+
+/* =========================================================
+   CATEGORY MODAL
+========================================================= */
+
+.category-modal-content {
+    max-width: 520px;
+}
+
+#categoryForm {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+#categoryForm label {
+    margin-top: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#categoryName {
+    width: 100%;
+
+    min-height: 48px;
+
+    padding: 12px 14px;
+
+    border: 1px solid #d2d2d2;
+
+    border-radius: 11px;
+
+    background: #fff;
+
+    color: #222;
+
+    font-size: 16px;
+
+    outline: none;
+}
+
+#categoryName:focus {
+    border-color: #555;
+
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+
+/* Icon picker */
+
+.category-icon-picker {
+    display: grid;
+
+    grid-template-columns: repeat(5, 1fr);
+
+    gap: 8px;
+
+    margin-top: 4px;
+}
+
+.category-icon-option {
+    min-height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid #ddd;
+
+    border-radius: 11px;
+
+    background: #fff;
+
+    font-size: 25px;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        transform 0.1s ease;
+}
+
+.category-icon-option:hover {
+    background: #f7f7f7;
+}
+
+.category-icon-option:active {
+    transform: scale(0.95);
+}
+
+.category-icon-option.selected {
+    border: 2px solid #222;
+
+    background: #f3f3f3;
+}
+
+
+/* Dark theme */
+
+body.dark-theme .settings-category-tab {
+    border-top-color: #2b2b2b;
+}
+
+body.dark-theme .settings-category-toggle-icon {
+    background: #292929;
+}
+
+body.dark-theme .settings-category-toggle.open
+.settings-category-toggle-icon {
+    background: #333;
+}
+
+body.dark-theme .settings-category-toggle span:not(.settings-category-toggle-icon),
+body.dark-theme .settings-category-panel-header span {
+    color: #999;
+}
+
+body.dark-theme .settings-category-item {
+    background: #292929;
+    border-color: #444;
+}
+
+body.dark-theme .settings-category-icon {
+    background: #1c1c1c;
+}
+
+body.dark-theme .settings-category-action {
+    background: #333;
+    color: #f1f1f1;
+}
+
+body.dark-theme .settings-category-action:hover {
+    background: #444;
+}
+
+body.dark-theme #categoryName {
+    background: #292929;
+    color: #f1f1f1;
+    border-color: #444;
+}
+
+body.dark-theme .category-icon-option {
+    background: #292929;
+    border-color: #444;
+    color: #f1f1f1;
+}
+
+body.dark-theme .category-icon-option.selected {
+    background: #f1f1f1;
+    color: #121212;
+    border-color: #f1f1f1;
+}
