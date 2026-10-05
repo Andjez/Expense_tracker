@@ -423,6 +423,7 @@ async function loadCategories() {
     categories = data || [];
 
     renderCategories();
+    renderSettingsCategories();
 }
 
 
@@ -462,6 +463,76 @@ function renderCategories() {
         categoryGrid.appendChild(button);
     });
 }
+
+function renderSettingsCategories() {
+
+    const container =
+        document.getElementById("settingsCategoryList");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    if (!categories.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                No categories yet.
+            </div>
+        `;
+
+        return;
+    }
+
+    categories.forEach(category => {
+
+        const row =
+            document.createElement("div");
+
+        row.className = "settings-category-row";
+
+        row.innerHTML = `
+            <div class="settings-category-info">
+
+                <span class="settings-category-icon">
+                    ${escapeHtml(category.icon || "📦")}
+                </span>
+
+                <span class="settings-category-name">
+                    ${escapeHtml(category.name)}
+                </span>
+
+            </div>
+
+            <div class="settings-category-actions">
+
+                <button
+                    type="button"
+                    class="settings-category-edit"
+                    data-category-id="${category.id}"
+                    aria-label="Edit ${escapeHtml(category.name)}"
+                >
+                    ✏️
+                </button>
+
+                <button
+                    type="button"
+                    class="settings-category-delete"
+                    data-category-id="${category.id}"
+                    aria-label="Delete ${escapeHtml(category.name)}"
+                >
+                    🗑️
+                </button>
+
+            </div>
+        `;
+
+        container.appendChild(row);
+    });
+}
+
+
 // =========================
 // Calendar
 // =========================
