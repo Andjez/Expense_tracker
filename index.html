@@ -167,15 +167,76 @@
     </section>
 <section id="reportsScreen" class="app-screen hidden">
   <section class="reports-header">
-    <h2>Reports</h2>
-    <p>See where your money is going.</p>
-  </section>
+  <h2>Reports</h2>
+  <p>See where your money is going.</p>
+</section>
+
+<section class="report-card report-filters-card">
+
+  <div class="report-mode-switch">
+    <button
+      id="monthlyReportButton"
+      class="report-mode-button active"
+      type="button"
+      aria-pressed="true"
+    >
+      Monthly
+    </button>
+
+    <button
+      id="yearlyReportButton"
+      class="report-mode-button"
+      type="button"
+      aria-pressed="false"
+    >
+      Yearly
+    </button>
+  </div>
+
+  <div id="monthlyReportFilters" class="report-date-filters">
+
+    <div class="report-filter-field">
+      <label for="reportMonthSelect">Month</label>
+      <select id="reportMonthSelect" class="settings-select">
+        <option value="0">January</option>
+        <option value="1">February</option>
+        <option value="2">March</option>
+        <option value="3">April</option>
+        <option value="4">May</option>
+        <option value="5">June</option>
+        <option value="6">July</option>
+        <option value="7">August</option>
+        <option value="8">September</option>
+        <option value="9">October</option>
+        <option value="10">November</option>
+        <option value="11">December</option>
+      </select>
+    </div>
+
+    <div class="report-filter-field">
+      <label for="reportYearSelect">Year</label>
+      <select id="reportYearSelect" class="settings-select"></select>
+    </div>
+
+  </div>
+
+  <div id="yearlyReportFilters" class="report-date-filters hidden">
+    <div class="report-filter-field">
+      <label for="reportYearSelectYearly">Year</label>
+      <select
+        id="reportYearSelectYearly"
+        class="settings-select"
+      ></select>
+    </div>
+  </div>
+
+</section>
 
 <section class="report-card monthly-summary-card">
 
   <div class="monthly-summary-top">
     <div>
-      <span>This Month</span>
+      <span class="report-period-label">This Month</span>
       <strong id="reportMonthTotal">₹0</strong>
     </div>
 
@@ -209,7 +270,7 @@
 
   <div class="report-section-title">
     <h3>Daily Spending</h3>
-    <span>This Month</span>
+    <span class="report-period-label">This Month</span>
   </div>
 
   <div class="daily-chart-wrapper">
@@ -222,7 +283,7 @@
 
   <div class="report-section-title">
     <h3>Spending by Category</h3>
-    <span>This Month</span>
+    <span class="report-period-label">This Month</span>
   </div>
 
   <div class="category-chart-wrapper">
@@ -238,8 +299,8 @@
 <section class="report-card person-report-card">
 
   <div class="report-section-title">
-    <h3>Who Spent More?</h3>
-    <span>This Month</span>
+<h3>Daily Spending</h3>
+  <span class="report-period-label">This Month</span>
   </div>
 
   <div id="personReportList" class="person-report-list">
