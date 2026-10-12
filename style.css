@@ -2766,3 +2766,74 @@ body.dark-theme #reportsScreen .report-filter-field select {
     border-color: #3b4050 !important;
 }
 
+/* Scrollable category legend below the doughnut chart */
+.category-pie-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 8px;
+  max-height: 125px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 2px 12px;
+  margin: 0 0 12px;
+  border-bottom: 1px solid #eee;
+  scrollbar-width: thin;
+  box-sizing: border-box;
+}
+
+.category-pie-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+  background: #f8f8f8;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.category-pie-legend-item:active {
+  transform: scale(0.98);
+}
+
+.category-pie-legend-icon {
+  flex-shrink: 0;
+}
+
+.category-pie-legend-name {
+  overflow-wrap: anywhere;
+}
+
+.category-pie-legend-item.is-hidden {
+  opacity: 0.5;
+  text-decoration: line-through;
+  background: transparent;
+}
+
+.category-pie-legend-item:focus-visible {
+  outline: 2px solid #888;
+  outline-offset: 2px;
+}
+
+/* Dark theme support */
+body.dark-theme .category-pie-legend {
+  border-bottom-color: #333;
+}
+
+body.dark-theme .category-pie-legend-item {
+  background: #252525;
+  border-color: #444;
+  color: #f1f1f1;
+}
+
+body.dark-theme .category-pie-legend-item.is-hidden {
+  background: transparent;
+}
+
