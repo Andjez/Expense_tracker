@@ -1724,135 +1724,137 @@ function renderPersonReport(reportExpenses, mode = "monthly") {
 }
 
 
+
 function setupReportFilters() {
-  // Prevent duplicate listeners if initialization runs again.
-  if (setupReportFilters.initialized) {
-    return;
-  }
+    if (setupReportFilters.initialized) return;
+    setupReportFilters.initialized = true;
 
-  const monthSelect = document.getElementById("reportMonthSelect");
-  const monthYearSelect = document.getElementById("reportYearSelect");
-  const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
+    const monthSelect = document.getElementById("reportMonthSelect");
+    const monthlyYearSelect = document.getElementById("reportYearSelect");
+    const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
 
-  const monthlyButton = document.getElementById("monthlyReportButton");
-  const yearlyButton = document.getElementById("yearlyReportButton");
+    const monthlyButton = document.getElementById("monthlyReportButton");
+    const yearlyButton = document.getElementById("yearlyReportButton");
 
-  const monthlyFilters = document.getElementById("monthlyReportFilters");
-  const yearlyFilters = document.getElementById("yearlyReportFilters");
+    const currentDate = new Date();
+    const currentMonth = String(currentDate.getMonth() + 1);
+    const currentYear = String(currentDate.getFullYear());
 
-  if (
-    !monthSelect ||
-    !monthYearSelect ||
-    !yearlyYearSelect ||
-    !monthlyButton ||
-    !yearlyButton ||
-    !monthlyFilters ||
-    !yearlyFilters
-  ) {
-    console.error("Report filters are missing from index.html.");
-    return;
-  }
+    const savedMonth = localStorage.getItem("reportSelectedMonth");
+    const savedYear = localStorage.getItem("reportSelectedYear");
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
+    // Default to the current month and year unless a selection was saved.
+    const initialMonth =
+        savedMonth && Number(savedMonth) >= 1 && Number(savedMonth) <= 12
+            ? savedMonth
+            : currentMonth;
 
-  // Only set the month if the selector has no valid selection.
-  if (
-    monthSelect.value === "" ||
-    Number(monthSelect.value) < 0 ||
-    Number(monthSelect.value) > 11
-  ) {
-    monthSelect.value = String(now.getMonth());
-  }
+    const initialYear =
+        savedYear && /^\d{4}$/.test(savedYear)
+            ? savedYear
+            : currentYear;
 
-  function populateYears(select) {
-    const previousValue = select.value;
+    // Populate both year selectors.
+    [monthlyYearSelect, yearlyYearSelect].forEach(select => {
+        if (!select) return;
 
-    select.replaceChildren();
+        select.innerHTML = "";
 
-    for (let year = currentYear; year >= 2000; year--) {
-      select.add(new Option(String(year), String(year)));
+        const selectedYearNumber = Number(initialYear);
+        const firstYear = Math.min(2000, selectedYearNumber);
+
+        for (let year = currentDate.getFullYear(); year >= firstYear; year--) {
+            const option = document.createElement("option");
+            option.value = String(year);
+            option.textContent = String(year);
+            select.appendChild(option);
+        }
+
+        // Include a saved year if it is outside the generated range.
+        if (
+            !Array.from(select.options).some(option => option.value === initialYear)
+        ) {
+            const option = document.createElement("option");
+            option.value = initialYear;
+            option.textContent = initialYear;
+            select.appendChild(option);
+        }
+
+        select.value = initialYear;
+    });
+
+    if (monthSelect) {
+        monthSelect.value = initialMonth;
     }
 
-    const validPreviousYear =
-      previousValue &&
-      Number(previousValue) >= 2000 &&
-      Number(previousValue) <= currentYear;
-
-    select.value = validPreviousYear
-      ? previousValue
-      : String(currentYear);
-  }
-
-  populateYears(monthYearSelect);
-  populateYears(yearlyYearSelect);
-
-  // Keep the year selectors synchronized.
-  function syncYearSelectors(source) {
-    if (source === "monthly") {
-      yearlyYearSelect.value = monthYearSelect.value;
-    } else {
-      monthYearSelect.value = yearlyYearSelect.value;
+    // Keep the two year selectors synchronized.
+    if (monthlyYearSelect && yearlyYearSelect) {
+        monthlyYearSelect.value = initialYear;
+        yearlyYearSelect.value = initialYear;
     }
-  }
 
-  function setReportMode(mode, shouldReload = true) {
-    reportMode = mode === "yearly" ? "yearly" : "monthly";
+    function saveReportSelection() {
+        const month = monthSelect?.value || currentMonth;
+        const year =
+            (reportMode === "yearly"
+                ? yearlyYearSelect?.value
+                : monthlyYearSelect?.value) || currentYear;
 
-    const isMonthly = reportMode === "monthly";
-
-    monthlyButton.classList.toggle("active", isMonthly);
-    yearlyButton.classList.toggle("active", !isMonthly);
-
-    monthlyButton.setAttribute("aria-pressed", String(isMonthly));
-    yearlyButton.setAttribute("aria-pressed", String(!isMonthly));
-
-    monthlyFilters.classList.toggle("hidden", !isMonthly);
-    yearlyFilters.classList.toggle("hidden", isMonthly);
-
-    if (shouldReload) {
-      loadReports();
+        localStorage.setItem("reportSelectedMonth", month);
+        localStorage.setItem("reportSelectedYear", year);
     }
-  }
 
-  monthlyButton.addEventListener("click", () => {
-    syncYearSelectors("yearly");
-    setReportMode("monthly");
-  });
-
-  yearlyButton.addEventListener("click", () => {
-    syncYearSelectors("monthly");
-    setReportMode("yearly");
-  });
-
-  monthSelect.addEventListener("change", () => {
-    if (reportMode === "monthly") {
-      loadReports();
+    if (monthSelect) {
+        monthSelect.addEventListener("change", async () => {
+            saveReportSelection();
+            if (reportMode === "monthly") {
+                await loadReports();
+            }
+        });
     }
-  });
 
-  monthYearSelect.addEventListener("change", () => {
-    syncYearSelectors("monthly");
+    if (monthlyYearSelect) {
+        monthlyYearSelect.addEventListener("change", async () => {
+            if (yearlyYearSelect) {
+                yearlyYearSelect.value = monthlyYearSelect.value;
+            }
 
-    if (reportMode === "monthly") {
-      loadReports();
+            saveReportSelection();
+            if (reportMode === "monthly") {
+                await loadReports();
+            }
+        });
     }
-  });
 
-  yearlyYearSelect.addEventListener("change", () => {
-    syncYearSelectors("yearly");
+    if (yearlyYearSelect) {
+        yearlyYearSelect.addEventListener("change", async () => {
+            if (monthlyYearSelect) {
+                monthlyYearSelect.value = yearlyYearSelect.value;
+            }
 
-    if (reportMode === "yearly") {
-      loadReports();
+            saveReportSelection();
+            if (reportMode === "yearly") {
+                await loadReports();
+            }
+        });
     }
-  });
 
-  // Set the initial visual state without loading data yet.
-  // Reports will load when the Reports screen is opened.
-  setReportMode(reportMode, false);
+    if (monthlyButton) {
+        monthlyButton.addEventListener("click", () => {
+            setReportMode("monthly");
+        });
+    }
 
-  setupReportFilters.initialized = true;
+    if (yearlyButton) {
+        yearlyButton.addEventListener("click", () => {
+            setReportMode("yearly");
+        });
+    }
+
+    // Apply the current report mode without loading before authentication.
+    setReportMode(reportMode, false);
 }
+
 
 
 // Initialize the report controls once.
