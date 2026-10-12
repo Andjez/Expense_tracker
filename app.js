@@ -1811,13 +1811,15 @@ function setupReportFilters() {
     window.setReportMode = function (mode, shouldLoad = true) {
         reportMode = mode === "yearly" ? "yearly" : "monthly";
 
-        if (monthlyFilters) {
-            monthlyFilters.hidden = reportMode !== "monthly";
-        }
+if (monthlyFilters) {
+    monthlyFilters.style.display =
+        reportMode === "monthly" ? "" : "none";
+}
 
-        if (yearlyFilters) {
-            yearlyFilters.hidden = reportMode !== "yearly";
-        }
+if (yearlyFilters) {
+    yearlyFilters.style.display =
+        reportMode === "yearly" ? "" : "none";
+}
 
         if (monthlyButton) {
             monthlyButton.classList.toggle("active", reportMode === "monthly");
