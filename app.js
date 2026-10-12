@@ -1437,13 +1437,32 @@ function updateReportPeriodLabels(year, month) {
 
 let categoryPieChart = null;
 
+
 function renderCategoryReport(reportExpenses) {
   const container = document.getElementById("categoryReportList");
+  const canvas = document.getElementById("categoryPieChart");
+
+  if (!container || !canvas) {
+    console.error("Category report elements are missing.");
+    return;
+  }
+
+  // Create a separate, scrollable legend below the chart.
+  let legend = document.getElementById("categoryPieLegend");
+
+  if (!legend) {
+    legend = document.createElement("div");
+    legend.id = "categoryPieLegend";
+    legend.className = "category-pie-legend";
+    canvas.parentElement.insertAdjacentElement("afterend", legend);
+  }
 
   if (!reportExpenses.length) {
     container.innerHTML = `
       <div class="empty-state">No expenses this month.</div>
     `;
+
+    legend.innerHTML = "";
 
     if (categoryPieChart) {
       categoryPieChart.destroy();
@@ -1453,20 +1472,23 @@ function renderCategoryReport(reportExpenses) {
     return;
   }
 
+  // Calculate spending for each category.
   const categoryTotals = {};
 
   reportExpenses.forEach((expense) => {
     const categoryId = expense.category_id;
+    const amount = Number(expense.amount) || 0;
 
     if (!categoryTotals[categoryId]) {
       categoryTotals[categoryId] = {
+        id: categoryId,
         name: expense.categories?.name || "Other",
         icon: expense.categories?.icon || "📦",
         total: 0
       };
     }
 
-    categoryTotals[categoryId].total += Number(expense.amount);
+    categoryTotals[categoryId].total += amount;
   });
 
   const sortedCategories = Object.values(categoryTotals)
@@ -1477,9 +1499,10 @@ function renderCategoryReport(reportExpenses) {
     0
   );
 
+  // Keep the category breakdown list.
   container.innerHTML = sortedCategories.map((category) => {
     const percentage = totalSpending
-      ? Math.round((category.total / totalSpending) * 100)
+      ? (category.total / totalSpending) * 100
       : 0;
 
     return `
@@ -1491,70 +1514,163 @@ function renderCategoryReport(reportExpenses) {
 
         <strong>
           ${formatCurrency(category.total)}
-          <small>${percentage}%</small>
+          <small>${percentage.toFixed(1)}%</small>
         </strong>
       </div>
     `;
   }).join("");
 
-  const canvas = document.getElementById("categoryPieChart");
-
-  if (!canvas) {
-    return;
-  }
-
   if (categoryPieChart) {
     categoryPieChart.destroy();
+    categoryPieChart = null;
   }
 
+  // Build the doughnut chart.
   categoryPieChart = new Chart(canvas, {
     type: "doughnut",
 
     data: {
-      labels: sortedCategories.map((category) => {
-        return `${category.icon} ${category.name}`;
-      }),
+      labels: sortedCategories.map(
+        category => `${category.icon} ${category.name}`
+      ),
 
       datasets: [{
-        data: sortedCategories.map((category) => category.total)
+        data: sortedCategories.map(category => category.total)
       }]
     },
 
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      cutout: "65%",
 
       plugins: {
+        // Use our own scrollable legend below the chart.
         legend: {
-          position: "bottom",
-
-          labels: {
-            usePointStyle: true,
-            padding: 14,
-            font: {
-              size: 11
-            }
-          }
+          display: false
         },
 
         tooltip: {
           callbacks: {
             label: function(context) {
-              const value = Number(context.raw);
+              const chart = context.chart;
+              const value = Number(context.raw) || 0;
 
-              const percentage = totalSpending
-                ? ((value / totalSpending) * 100).toFixed(1)
+              // Count only categories that are currently visible.
+              const visibleTotal = chart.data.datasets[0].data.reduce(
+                (sum, amount, index) => {
+                  return chart.getDataVisibility(index)
+                    ? sum + (Number(amount) || 0)
+                    : sum;
+                },
+                0
+              );
+
+              const percentage = visibleTotal
+                ? (value / visibleTotal) * 100
                 : 0;
 
-              return ` ${formatCurrency(value)} (${percentage}%)`;
+              return ` ${formatCurrency(value)} (${percentage.toFixed(1)}%)`;
             }
           }
         }
-      },
+      }
+    },
 
-      cutout: "62%"
-    }
+    // Display the currently visible spending total in the doughnut hole.
+    plugins: [{
+      id: "categoryCenterTotal",
+
+      afterDraw(chart) {
+        const ctx = chart.ctx;
+        const area = chart.chartArea;
+
+        if (!area) return;
+
+        const visibleTotal = chart.data.datasets[0].data.reduce(
+          (sum, amount, index) => {
+            return chart.getDataVisibility(index)
+              ? sum + (Number(amount) || 0)
+              : sum;
+          },
+          0
+        );
+
+        const centerX = (area.left + area.right) / 2;
+        const centerY = (area.top + area.bottom) / 2;
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.fillStyle = "#888";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("VISIBLE TOTAL", centerX, centerY - 13);
+
+        ctx.fillStyle = getComputedStyle(canvas).color || "#222";
+        ctx.font = "bold 16px sans-serif";
+
+        let totalText = formatCurrency(visibleTotal);
+
+        // Reduce the font size if the amount is too wide.
+        const maxWidth = Math.max(40, area.right - area.left - 20);
+
+        while (
+          ctx.measureText(totalText).width > maxWidth &&
+          parseInt(ctx.font.match(/\d+/)?.[0] || "16", 10) > 10
+        ) {
+          const currentSize = parseInt(
+            ctx.font.match(/\d+/)?.[0] || "16",
+            10
+          );
+          ctx.font = `bold ${currentSize - 1}px sans-serif`;
+        }
+
+        ctx.fillText(totalText, centerX, centerY + 10, maxWidth);
+        ctx.restore();
+      }
+    }]
   });
+
+  // Draw clickable category tags. Hidden categories are crossed out.
+  function renderCategoryLegend() {
+    legend.innerHTML = "";
+
+    sortedCategories.forEach((category, index) => {
+      const isVisible = categoryPieChart.getDataVisibility(index);
+      const button = document.createElement("button");
+
+      button.type = "button";
+      button.className = "category-pie-legend-item";
+      button.setAttribute("aria-pressed", String(isVisible));
+
+      if (!isVisible) {
+        button.classList.add("is-hidden");
+      }
+
+      const icon = document.createElement("span");
+      icon.className = "category-pie-legend-icon";
+      icon.textContent = category.icon;
+
+      const name = document.createElement("span");
+      name.className = "category-pie-legend-name";
+      name.textContent = category.name;
+
+      button.append(icon, name);
+
+      button.addEventListener("click", () => {
+        if (!categoryPieChart) return;
+
+        categoryPieChart.toggleDataVisibility(index);
+        categoryPieChart.update();
+        renderCategoryLegend();
+      });
+
+      legend.appendChild(button);
+    });
+  }
+
+  renderCategoryLegend();
 }
 
 let dailySpendingChart = null;
