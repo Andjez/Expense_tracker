@@ -1825,6 +1825,25 @@ if (yearlyFilters) {
     );
 }
 
+
+        
+console.log("Report mode:", reportMode);
+console.log(
+    "Yearly filters element:",
+    yearlyFilters
+);
+console.log(
+    "Yearly filters classes:",
+    yearlyFilters?.className
+);
+console.log(
+    "Yearly dropdown element:",
+    document.getElementById("reportYearSelectYearly")
+);
+
+
+        
+        
         if (monthlyButton) {
             monthlyButton.classList.toggle("active", reportMode === "monthly");
             monthlyButton.setAttribute(
