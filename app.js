@@ -32,6 +32,7 @@ let calendarDate = new Date();
 let calendarExpenses = {};
 
 let dataViewMode = "both";
+let reportMode = "monthly";
 
 function showLoading() {
   const loading = document.getElementById("appLoading");
@@ -1218,13 +1219,34 @@ function showTodayScreen() {
 
 
 async function loadReports() {
+  const monthSelect = document.getElementById("reportMonthSelect");
+  const monthYearSelect = document.getElementById("reportYearSelect");
+  const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
+
   const now = new Date();
 
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const month = monthSelect
+    ? Number(monthSelect.value)
+    : now.getMonth();
 
-  const startDate = new Date(year, month, 1);
-  const endDate = new Date(year, month + 1, 0);
+  const yearSelect = reportMode === "yearly"
+    ? yearlyYearSelect
+    : monthYearSelect;
+
+  const year = yearSelect && yearSelect.value
+    ? Number(yearSelect.value)
+    : now.getFullYear();
+
+  let startDate;
+  let endDate;
+
+  if (reportMode === "yearly") {
+    startDate = new Date(year, 0, 1);
+    endDate = new Date(year, 11, 31);
+  } else {
+    startDate = new Date(year, month, 1);
+    endDate = new Date(year, month + 1, 0);
+  }
 
   const start = formatDateForSupabase(startDate);
   const end = formatDateForSupabase(endDate);
@@ -1249,56 +1271,50 @@ async function loadReports() {
     return;
   }
 
-let filteredExpenses = data || [];
+  let filteredExpenses = data || [];
 
-if (dataViewMode === "me") {
+  if (dataViewMode === "me") {
+    filteredExpenses = filteredExpenses.filter(
+      expense => expense.user_id === currentUserId
+    );
+  } else if (dataViewMode === "other") {
+    filteredExpenses = filteredExpenses.filter(
+      expense => expense.user_id !== currentUserId
+    );
+  }
 
-  filteredExpenses = filteredExpenses.filter(
-    expense => expense.user_id === currentUserId
-  );
-
-} else if (dataViewMode === "other") {
-
-  filteredExpenses = filteredExpenses.filter(
-    expense => expense.user_id !== currentUserId
-  );
-}
-
-renderReports(filteredExpenses);
+  updateReportPeriodLabels(year, month);
+  renderReports(filteredExpenses);
 }
 
 function renderReports(reportExpenses) {
-  const monthTotal = reportExpenses.reduce(
+  const total = reportExpenses.reduce(
     (sum, expense) => sum + Number(expense.amount),
     0
   );
 
   const transactionCount = reportExpenses.length;
-
   const dailyTotals = {};
 
   reportExpenses.forEach((expense) => {
     const date = expense.expense_date;
-
-    if (!dailyTotals[date]) {
-      dailyTotals[date] = 0;
-    }
-
-    dailyTotals[date] += Number(expense.amount);
+    dailyTotals[date] = (dailyTotals[date] || 0)
+      + Number(expense.amount);
   });
 
-  const daysWithExpenses = Object.keys(dailyTotals).length;
+  const dailyAmounts = Object.values(dailyTotals);
+  const daysWithExpenses = dailyAmounts.length;
 
   const dailyAverage = daysWithExpenses
-    ? monthTotal / daysWithExpenses
+    ? total / daysWithExpenses
     : 0;
 
-  const highestDay = Object.values(dailyTotals).length
-    ? Math.max(...Object.values(dailyTotals))
+  const highestDay = daysWithExpenses
+    ? Math.max(...dailyAmounts)
     : 0;
 
   document.getElementById("reportMonthTotal").textContent =
-    formatCurrency(monthTotal);
+    formatCurrency(total);
 
   document.getElementById("reportTransactionCount").textContent =
     transactionCount;
@@ -1310,9 +1326,49 @@ function renderReports(reportExpenses) {
     formatCurrency(highestDay);
 
   renderCategoryReport(reportExpenses);
-  renderPersonReport(reportExpenses);
-renderDailySpendingChart(reportExpenses);
+  renderPersonReport(reportExpenses, reportMode);
+  renderDailySpendingChart(reportExpenses, reportMode);
 }
+
+function updateReportPeriodLabels(year, month) {
+  const label = reportMode === "yearly"
+    ? `Year ${year}`
+    : new Date(year, month, 1).toLocaleDateString("en-IN", {
+        month: "long",
+        year: "numeric"
+      });
+
+  document.querySelectorAll(".report-period-label").forEach((element) => {
+    element.textContent = label;
+  });
+
+  const dailyTitle = document.querySelector(
+    ".daily-spending-card .report-section-title h3"
+  );
+
+  if (dailyTitle) {
+    dailyTitle.textContent = reportMode === "yearly"
+      ? "Monthly Spending"
+      : "Daily Spending";
+  }
+
+  const averageLabel = document.querySelector(
+    ".monthly-summary-stats .monthly-stat:nth-child(2) span"
+  );
+
+  if (averageLabel) {
+    averageLabel.textContent = "Daily Average";
+  }
+
+  const highestLabel = document.querySelector(
+    ".monthly-summary-stats .monthly-stat:nth-child(3) span"
+  );
+
+  if (highestLabel) {
+    highestLabel.textContent = "Highest Day";
+  }
+}
+
 
 let categoryPieChart = null;
 
@@ -1438,81 +1494,96 @@ function renderCategoryReport(reportExpenses) {
 
 let dailySpendingChart = null;
 
-function renderDailySpendingChart(reportExpenses) {
+
+function renderDailySpendingChart(reportExpenses, mode = "monthly") {
   const canvas = document.getElementById("dailySpendingChart");
 
-  if (!canvas) {
-    return;
-  }
+  if (!canvas) return;
 
   if (dailySpendingChart) {
     dailySpendingChart.destroy();
   }
 
-  const dailyTotals = {};
+  const totals = {};
 
   reportExpenses.forEach((expense) => {
     const date = expense.expense_date;
+    const key = mode === "yearly"
+      ? date.slice(0, 4) + "-" + date.slice(5, 7)
+      : date;
 
-    if (!dailyTotals[date]) {
-      dailyTotals[date] = 0;
+    totals[key] = (totals[key] || 0) + Number(expense.amount);
+  });
+
+  let labels;
+  let values;
+
+  if (mode === "yearly") {
+    const yearSelect = document.getElementById("reportYearSelectYearly");
+    const year = yearSelect
+      ? Number(yearSelect.value)
+      : new Date().getFullYear();
+
+    labels = [];
+    values = [];
+
+    for (let month = 0; month < 12; month++) {
+      const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+
+      labels.push(
+        new Date(year, month, 1).toLocaleDateString("en-IN", {
+          month: "short"
+        })
+      );
+
+      values.push(totals[key] || 0);
     }
+  } else {
+    const dates = Object.keys(totals).sort();
 
-    dailyTotals[date] += Number(expense.amount);
-  });
+    labels = dates.map((date) => {
+      const [, month, day] = date.split("-");
+      return `${day}/${month}`;
+    });
 
-  const dates = Object.keys(dailyTotals).sort();
-
-  const labels = dates.map((date) => {
-    const parts = date.split("-");
-    return `${parts[2]}/${parts[1]}`;
-  });
-
-  const values = dates.map((date) => dailyTotals[date]);
+    values = dates.map((date) => totals[date]);
+  }
 
   dailySpendingChart = new Chart(canvas, {
     type: "line",
-
     data: {
-      labels: labels,
-
+      labels,
       datasets: [{
-        label: "Daily Spending",
+        label: mode === "yearly" ? "Monthly Spending" : "Daily Spending",
         data: values,
         tension: 0.35,
         fill: true
       }]
     },
-
     options: {
       responsive: true,
       maintainAspectRatio: false,
-
       scales: {
         y: {
           beginAtZero: true,
-
           ticks: {
             callback: function(value) {
               return formatShortCurrency(value);
             }
           }
         },
-
         x: {
           ticks: {
             maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 7
+            autoSkip: mode !== "yearly",
+            maxTicksLimit: mode === "yearly" ? 12 : 7
           }
         }
       },
-
       plugins: {
         legend: {
           display: false
         },
-
         tooltip: {
           callbacks: {
             label: function(context) {
@@ -1525,13 +1596,14 @@ function renderDailySpendingChart(reportExpenses) {
   });
 }
 
-function renderPersonReport(reportExpenses) {
+
+function renderPersonReport(reportExpenses, mode = "monthly") {
   const container = document.getElementById("personReportList");
   const differenceContainer = document.getElementById("personDifference");
 
   if (!reportExpenses.length) {
     container.innerHTML = `
-      <div class="empty-state">No expenses this month.</div>
+      <div class="empty-state">No expenses for this period.</div>
     `;
 
     differenceContainer.textContent = "";
@@ -1600,16 +1672,100 @@ function renderPersonReport(reportExpenses) {
 
     if (difference > 0) {
       differenceContainer.textContent =
-        `${people[0].name} spent ${formatCurrency(difference)} more this month.`;
+        `${people[0].name} spent ${formatCurrency(difference)} more this ${mode === "yearly" ? "year" : "month"}.`;
     } else if (difference === 0) {
       differenceContainer.textContent =
-        "Both spent the same amount this month.";
+        `Both spent the same amount this ${mode === "yearly" ? "year" : "month"}.`;
     }
   } else {
     differenceContainer.textContent = "";
   }
 }
 
+
+function setupReportFilters() {
+  const monthSelect = document.getElementById("reportMonthSelect");
+  const monthYearSelect = document.getElementById("reportYearSelect");
+  const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
+
+  const monthlyButton = document.getElementById("monthlyReportButton");
+  const yearlyButton = document.getElementById("yearlyReportButton");
+
+  const monthlyFilters = document.getElementById("monthlyReportFilters");
+  const yearlyFilters = document.getElementById("yearlyReportFilters");
+
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+
+  if (
+    !monthSelect ||
+    !monthYearSelect ||
+    !yearlyYearSelect ||
+    !monthlyButton ||
+    !yearlyButton ||
+    !monthlyFilters ||
+    !yearlyFilters
+  ) {
+    console.error("Report filter elements are missing from index.html.");
+    return;
+  }
+
+  monthSelect.value = String(currentDate.getMonth());
+
+  // Populate both year selectors, newest year first.
+  for (let year = currentYear; year >= 2000; year--) {
+    const monthlyOption = new Option(String(year), String(year));
+    const yearlyOption = new Option(String(year), String(year));
+
+    monthYearSelect.add(monthlyOption);
+    yearlyYearSelect.add(yearlyOption);
+  }
+
+  monthYearSelect.value = String(currentYear);
+  yearlyYearSelect.value = String(currentYear);
+
+  function setReportMode(mode) {
+    reportMode = mode;
+
+    const isMonthly = mode === "monthly";
+
+    monthlyButton.classList.toggle("active", isMonthly);
+    yearlyButton.classList.toggle("active", !isMonthly);
+
+    monthlyButton.setAttribute("aria-pressed", String(isMonthly));
+    yearlyButton.setAttribute("aria-pressed", String(!isMonthly));
+
+    monthlyFilters.classList.toggle("hidden", !isMonthly);
+    yearlyFilters.classList.toggle("hidden", isMonthly);
+
+    loadReports();
+  }
+
+  monthlyButton.addEventListener("click", () => {
+    yearlyYearSelect.value = monthYearSelect.value;
+    setReportMode("monthly");
+  });
+
+  yearlyButton.addEventListener("click", () => {
+    monthYearSelect.value = yearlyYearSelect.value;
+    setReportMode("yearly");
+  });
+
+  monthSelect.addEventListener("change", loadReports);
+
+  monthYearSelect.addEventListener("change", () => {
+    yearlyYearSelect.value = monthYearSelect.value;
+    loadReports();
+  });
+
+  yearlyYearSelect.addEventListener("change", () => {
+    monthYearSelect.value = yearlyYearSelect.value;
+    loadReports();
+  });
+}
+
+// Initialize the report controls once.
+setupReportFilters();
 // =========================
 // Expenses
 // =========================
