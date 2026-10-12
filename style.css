@@ -1847,217 +1847,7 @@ button {
   cursor: pointer;
 }
 
-/* Dark Theme */
-
-body.dark-theme {
-  background: #121212;
-  color: #f1f1f1;
-}
-
-body.dark-theme .app-header {
-  background: #181818;
-  color: #f1f1f1;
-}
-
-body.dark-theme .bottom-nav {
-  background: #181818;
-  border-top-color: #2a2a2a;
-}
-
-body.dark-theme .nav-item {
-  color: #999;
-}
-
-body.dark-theme .nav-item.active {
-  color: #fff;
-}
-
-body.dark-theme .total-card,
-body.dark-theme .report-card,
-body.dark-theme .settings-card {
-  background: #1c1c1c;
-  border-color: #2b2b2b;
-}
-
-body.dark-theme .date-button,
-body.dark-theme .month-button,
-body.dark-theme .calendar-today-button {
-  background: #292929;
-  color: #f1f1f1;
-}
-
-body.dark-theme .calendar-day {
-  background: #1c1c1c;
-  border-color: #2b2b2b;
-  color: #f1f1f1;
-}
-
-body.dark-theme .calendar-day.today {
-  border-color: #fff;
-}
-
-body.dark-theme .calendar-day.selected {
-  background: #f1f1f1;
-  color: #121212;
-}
-
-body.dark-theme .calendar-day.selected .calendar-day-total {
-  color: #555;
-}
-
-body.dark-theme .calendar-day-total,
-body.dark-theme .calendar-weekdays span {
-  color: #888;
-}
-
-body.dark-theme .expense-row {
-  background: #1c1c1c;
-  border-color: #2b2b2b;
-}
-
-body.dark-theme .report-row {
-  background: #252525;
-}
-
-body.dark-theme .report-icon {
-  background: #1c1c1c;
-}
-
-body.dark-theme .person-progress {
-  background: #333;
-}
-
-body.dark-theme .settings-select {
-  background: #292929;
-  border-color: #444;
-  color: #f1f1f1;
-}
-
-body.dark-theme .empty-state {
-  background: #1a1a1a;
-  border-color: #333;
-  color: #999;
-}
-
-body.dark-theme .settings-section span,
-body.dark-theme .reports-header p,
-body.dark-theme .settings-header p {
-  color: #999;
-}
-
-body.dark-theme {
-  background: #121212;
-  color: #f1f1f1;
-}
-
-body.dark-theme #app {
-  background: #121212;
-}
-
-body.dark-theme main {
-  background: #121212;
-}
-
-body.dark-theme .app-screen {
-  background: #121212;
-}
-
-body.dark-theme .app-header {
-  background: #181818;
-  color: #f1f1f1;
-  border-bottom-color: #2a2a2a;
-}
-
-body.dark-theme .expenses-section {
-  background: #121212;
-}
-
-body.dark-theme .expense-list {
-  background: #121212;
-}
-
-body.dark-theme .expense-row {
-  background: #1c1c1c;
-}
-
-body.dark-theme .section-header {
-  color: #f1f1f1;
-}
-
-body.dark-theme .section-header span {
-  color: #999;
-}
-
-body.dark-theme .current-date,
-body.dark-theme .reports-header h2,
-body.dark-theme .settings-header h2,
-body.dark-theme .calendar-header h2 {
-  color: #f1f1f1;
-}
-
-body.dark-theme .today-label {
-  color: #999;
-}
-body.dark-theme .modal {
-  background: rgba(0, 0, 0, 0.72);
-}
-
-body.dark-theme .modal-content {
-  background: #1c1c1c;
-  color: #f1f1f1;
-  border-color: #2b2b2b;
-}
-
-body.dark-theme .modal-header {
-  border-bottom-color: #2b2b2b;
-}
-
-body.dark-theme .modal-header h2 {
-  color: #f1f1f1;
-}
-
-body.dark-theme .close-button {
-  background: #292929;
-  color: #f1f1f1;
-}
-
-body.dark-theme .modal-content label {
-  color: #ddd;
-}
-
-body.dark-theme .modal-content input,
-body.dark-theme .modal-content select,
-body.dark-theme .modal-content textarea {
-  background: #292929;
-  color: #f1f1f1;
-  border-color: #444;
-}
-
-body.dark-theme .modal-content input::placeholder,
-body.dark-theme .modal-content textarea::placeholder {
-  color: #888;
-}
-
-body.dark-theme .category-button {
-  background: #292929;
-  border-color: #444;
-  color: #f1f1f1;
-}
-
-body.dark-theme .category-button.selected {
-  background: #f1f1f1;
-  border-color: #f1f1f1;
-  color: #121212;
-}
-
-body.dark-theme .primary-button {
-  background: #f1f1f1;
-  color: #121212;
-}
-
-body.dark-theme .error-message {
-  color: #ff8a8a;
-}
+/*______place holder_______________*/
 
 /* =========================
    Settings Categories
@@ -2835,5 +2625,218 @@ body.dark-theme .category-pie-legend-item {
 
 body.dark-theme .category-pie-legend-item.is-hidden {
   background: transparent;
+}
+
+
+/* Dark Theme */
+
+body.dark-theme {
+  background: #121212;
+  color: #f1f1f1;
+}
+
+body.dark-theme .app-header {
+  background: #181818;
+  color: #f1f1f1;
+}
+
+body.dark-theme .bottom-nav {
+  background: #181818;
+  border-top-color: #2a2a2a;
+}
+
+body.dark-theme .nav-item {
+  color: #999;
+}
+
+body.dark-theme .nav-item.active {
+  color: #fff;
+}
+
+body.dark-theme .total-card,
+body.dark-theme .report-card,
+body.dark-theme .settings-card {
+  background: #1c1c1c;
+  border-color: #2b2b2b;
+}
+
+body.dark-theme .date-button,
+body.dark-theme .month-button,
+body.dark-theme .calendar-today-button {
+  background: #292929;
+  color: #f1f1f1;
+}
+
+body.dark-theme .calendar-day {
+  background: #1c1c1c;
+  border-color: #2b2b2b;
+  color: #f1f1f1;
+}
+
+body.dark-theme .calendar-day.today {
+  border-color: #fff;
+}
+
+body.dark-theme .calendar-day.selected {
+  background: #f1f1f1;
+  color: #121212;
+}
+
+body.dark-theme .calendar-day.selected .calendar-day-total {
+  color: #555;
+}
+
+body.dark-theme .calendar-day-total,
+body.dark-theme .calendar-weekdays span {
+  color: #888;
+}
+
+body.dark-theme .expense-row {
+  background: #1c1c1c;
+  border-color: #2b2b2b;
+}
+
+body.dark-theme .report-row {
+  background: #252525;
+}
+
+body.dark-theme .report-icon {
+  background: #1c1c1c;
+}
+
+body.dark-theme .person-progress {
+  background: #333;
+}
+
+body.dark-theme .settings-select {
+  background: #292929;
+  border-color: #444;
+  color: #f1f1f1;
+}
+
+body.dark-theme .empty-state {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #999;
+}
+
+body.dark-theme .settings-section span,
+body.dark-theme .reports-header p,
+body.dark-theme .settings-header p {
+  color: #999;
+}
+
+body.dark-theme {
+  background: #121212;
+  color: #f1f1f1;
+}
+
+body.dark-theme #app {
+  background: #121212;
+}
+
+body.dark-theme main {
+  background: #121212;
+}
+
+body.dark-theme .app-screen {
+  background: #121212;
+}
+
+body.dark-theme .app-header {
+  background: #181818;
+  color: #f1f1f1;
+  border-bottom-color: #2a2a2a;
+}
+
+body.dark-theme .expenses-section {
+  background: #121212;
+}
+
+body.dark-theme .expense-list {
+  background: #121212;
+}
+
+body.dark-theme .expense-row {
+  background: #1c1c1c;
+}
+
+body.dark-theme .section-header {
+  color: #f1f1f1;
+}
+
+body.dark-theme .section-header span {
+  color: #999;
+}
+
+body.dark-theme .current-date,
+body.dark-theme .reports-header h2,
+body.dark-theme .settings-header h2,
+body.dark-theme .calendar-header h2 {
+  color: #f1f1f1;
+}
+
+body.dark-theme .today-label {
+  color: #999;
+}
+body.dark-theme .modal {
+  background: rgba(0, 0, 0, 0.72);
+}
+
+body.dark-theme .modal-content {
+  background: #1c1c1c;
+  color: #f1f1f1;
+  border-color: #2b2b2b;
+}
+
+body.dark-theme .modal-header {
+  border-bottom-color: #2b2b2b;
+}
+
+body.dark-theme .modal-header h2 {
+  color: #f1f1f1;
+}
+
+body.dark-theme .close-button {
+  background: #292929;
+  color: #f1f1f1;
+}
+
+body.dark-theme .modal-content label {
+  color: #ddd;
+}
+
+body.dark-theme .modal-content input,
+body.dark-theme .modal-content select,
+body.dark-theme .modal-content textarea {
+  background: #292929;
+  color: #f1f1f1;
+  border-color: #444;
+}
+
+body.dark-theme .modal-content input::placeholder,
+body.dark-theme .modal-content textarea::placeholder {
+  color: #888;
+}
+
+body.dark-theme .category-button {
+  background: #292929;
+  border-color: #444;
+  color: #f1f1f1;
+}
+
+body.dark-theme .category-button.selected {
+  background: #f1f1f1;
+  border-color: #f1f1f1;
+  color: #121212;
+}
+
+body.dark-theme .primary-button {
+  background: #f1f1f1;
+  color: #121212;
+}
+
+body.dark-theme .error-message {
+  color: #ff8a8a;
 }
 
