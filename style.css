@@ -2517,3 +2517,196 @@ body.dark-theme .category-icon-option.selected {
 }
 
 
+/* =========================================
+   REPORT FILTERS — POLISHED LIGHT & DARK UI
+   ========================================= */
+
+#reportsScreen {
+    --filter-bg: #ffffff;
+    --filter-surface: #f5f7fb;
+    --filter-text: #202938;
+    --filter-muted: #687386;
+    --filter-border: #dce2ec;
+    --filter-accent: #5b5ce2;
+    --filter-accent-soft: #eeedff;
+    --filter-focus: rgba(91, 92, 226, 0.22);
+}
+
+/* Follow the app's explicit dark theme */
+body.dark-theme #reportsScreen {
+    --filter-bg: #1b1d23;
+    --filter-surface: #252832;
+    --filter-text: #f1f3f9;
+    --filter-muted: #a5adbd;
+    --filter-border: #3b4050;
+    --filter-accent: #a5a6ff;
+    --filter-accent-soft: #34334f;
+    --filter-focus: rgba(165, 166, 255, 0.25);
+}
+
+/* Follow system preference when the app has no explicit theme */
+@media (prefers-color-scheme: dark) {
+    body:not(.dark-theme):not(.light-theme) #reportsScreen {
+        --filter-bg: #1b1d23;
+        --filter-surface: #252832;
+        --filter-text: #f1f3f9;
+        --filter-muted: #a5adbd;
+        --filter-border: #3b4050;
+        --filter-accent: #a5a6ff;
+        --filter-accent-soft: #34334f;
+        --filter-focus: rgba(165, 166, 255, 0.25);
+    }
+}
+
+/* Filter card spacing */
+#reportsScreen .report-filters-card {
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--filter-border);
+    border-radius: 20px;
+    background: var(--filter-bg);
+    box-shadow: 0 5px 18px rgba(30, 40, 70, 0.06);
+    color: var(--filter-text);
+}
+
+/* Monthly / Yearly segmented toggle */
+#reportsScreen .report-mode-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 5px;
+    margin-bottom: 22px;
+    border: 1px solid var(--filter-border);
+    border-radius: 14px;
+    background: var(--filter-surface);
+}
+
+#reportsScreen .report-mode-button {
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--filter-muted);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 180ms ease,
+        color 180ms ease,
+        box-shadow 180ms ease,
+        transform 180ms ease;
+}
+
+#reportsScreen .report-mode-button:hover {
+    color: var(--filter-text);
+    background: var(--filter-accent-soft);
+}
+
+#reportsScreen .report-mode-button.active {
+    color: #ffffff;
+    background: var(--filter-accent);
+    box-shadow: 0 3px 9px rgba(50, 50, 100, 0.16);
+}
+
+body.dark-theme #reportsScreen .report-mode-button.active {
+    color: #171825;
+}
+
+/* Give month and year selectors room to breathe */
+#reportsScreen .report-date-filters {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    width: 100%;
+}
+
+#reportsScreen .report-date-filters .report-filter-field {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+}
+
+#reportsScreen .report-filter-field label {
+    color: var(--filter-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* Dropdown styling */
+#reportsScreen .report-filter-field select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 11px 38px 11px 13px;
+    border: 1px solid var(--filter-border);
+    border-radius: 12px;
+    background-color: var(--filter-surface);
+    color: var(--filter-text);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    outline: none;
+    transition:
+        border-color 180ms ease,
+        box-shadow 180ms ease,
+        background-color 180ms ease;
+}
+
+#reportsScreen .report-filter-field select:hover {
+    border-color: var(--filter-accent);
+}
+
+#reportsScreen .report-filter-field select:focus,
+#reportsScreen .report-filter-field select:focus-visible {
+    border-color: var(--filter-accent);
+    box-shadow: 0 0 0 4px var(--filter-focus);
+}
+
+/* Keep the native option list readable */
+#reportsScreen .report-filter-field select option {
+    background: var(--filter-bg);
+    color: var(--filter-text);
+}
+
+/* Hidden filters must remain hidden */
+#reportsScreen #monthlyReportFilters.hidden,
+#reportsScreen #yearlyReportFilters.hidden {
+    display: none !important;
+}
+
+/* Small-screen layout */
+@media (max-width: 480px) {
+    #reportsScreen .report-filters-card {
+        padding: 15px;
+        border-radius: 16px;
+    }
+
+    #reportsScreen .report-mode-switch {
+        margin-bottom: 18px;
+    }
+
+    #reportsScreen .report-date-filters {
+        gap: 12px;
+    }
+
+    #reportsScreen .report-filter-field select {
+        min-height: 46px;
+        padding-left: 10px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    #reportsScreen .report-mode-button,
+    #reportsScreen .report-filter-field select {
+        transition: none;
+    }
+}
+
