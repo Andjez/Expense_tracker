@@ -2710,3 +2710,59 @@ body.dark-theme #reportsScreen .report-mode-button.active {
     }
 }
 
+/* Fix Reports filter panel in light theme */
+body:not(.dark-theme) #reportsScreen .report-filters-card {
+    background: #ffffff !important;
+    color: #202938 !important;
+    border-color: #e1e5ed !important;
+    box-shadow: 0 5px 18px rgba(30, 40, 70, 0.07);
+}
+
+body:not(.dark-theme) #reportsScreen .report-mode-switch {
+    background: #f3f5fa !important;
+    border-color: #e0e5ee !important;
+}
+
+body:not(.dark-theme) #reportsScreen .report-mode-button:not(.active) {
+    background: transparent !important;
+    color: #667085 !important;
+}
+
+body:not(.dark-theme) #reportsScreen .report-mode-button.active {
+    background: #5b5ce2 !important;
+    color: #ffffff !important;
+}
+
+body:not(.dark-theme) #reportsScreen .report-filter-field label {
+    color: #667085 !important;
+}
+
+body:not(.dark-theme) #reportsScreen .report-filter-field select {
+    background-color: #f8f9fc !important;
+    color: #202938 !important;
+    border-color: #dce2ec !important;
+}
+
+body:not(.dark-theme) #reportsScreen .report-filter-field select option {
+    background: #ffffff;
+    color: #202938;
+}
+
+/* Preserve dark appearance when dark theme is enabled */
+body.dark-theme #reportsScreen .report-filters-card {
+    background: #1b1d23 !important;
+    color: #f1f3f9 !important;
+    border-color: #3b4050 !important;
+}
+
+body.dark-theme #reportsScreen .report-mode-switch {
+    background: #252832 !important;
+    border-color: #3b4050 !important;
+}
+
+body.dark-theme #reportsScreen .report-filter-field select {
+    background-color: #252832 !important;
+    color: #f1f3f9 !important;
+    border-color: #3b4050 !important;
+}
+
