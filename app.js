@@ -1328,9 +1328,10 @@ async function refreshVisibleReports() {
 }
 
 
+
 function renderReports(reportExpenses) {
   const total = reportExpenses.reduce(
-    (sum, expense) => sum + Number(expense.amount),
+    (sum, expense) => sum + Number(expense.amount || 0),
     0
   );
 
@@ -1340,15 +1341,37 @@ function renderReports(reportExpenses) {
   reportExpenses.forEach((expense) => {
     const date = expense.expense_date;
     dailyTotals[date] = (dailyTotals[date] || 0)
-      + Number(expense.amount);
+      + Number(expense.amount || 0);
   });
 
   const dailyAmounts = Object.values(dailyTotals);
   const daysWithExpenses = dailyAmounts.length;
 
-  const dailyAverage = daysWithExpenses
-    ? total / daysWithExpenses
-    : 0;
+  // Calculate the number of calendar days in the selected month.
+  // Months are numbered 0–11 in JavaScript.
+  const monthSelect = document.getElementById("reportMonthSelect");
+  const yearSelect = document.getElementById("reportYearSelect");
+  const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
+
+  let dailyAverage = 0;
+
+  if (reportMode === "monthly" && monthSelect && yearSelect) {
+    const month = Number(monthSelect.value);
+    const year = Number(yearSelect.value);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    dailyAverage = daysInMonth > 0
+      ? total / daysInMonth
+      : 0;
+  } else if (reportMode === "yearly" && yearlyYearSelect) {
+    // In yearly mode, calculate the average per calendar day of that year.
+    const year = Number(yearlyYearSelect.value);
+    const daysInYear = new Date(year, 11, 31).getDate() === 31
+      ? (new Date(year, 1, 29).getMonth() === 1 ? 366 : 365)
+      : 365;
+
+    dailyAverage = total / daysInYear;
+  }
 
   const highestDay = daysWithExpenses
     ? Math.max(...dailyAmounts)
@@ -1370,6 +1393,7 @@ function renderReports(reportExpenses) {
   renderPersonReport(reportExpenses, reportMode);
   renderDailySpendingChart(reportExpenses, reportMode);
 }
+
 
 function updateReportPeriodLabels(year, month) {
   const label = reportMode === "yearly"
