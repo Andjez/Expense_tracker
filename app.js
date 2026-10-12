@@ -1176,7 +1176,7 @@ function renderCalendar() {
             .classList.add("active");
 
         await loadExpenses();
-
+await refreshVisibleReports();
         renderCalendar();
     }
 );
@@ -1223,69 +1223,110 @@ async function loadReports() {
   const monthYearSelect = document.getElementById("reportYearSelect");
   const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
 
-  const now = new Date();
-
-  const month = monthSelect
-    ? Number(monthSelect.value)
-    : now.getMonth();
-
-  const yearSelect = reportMode === "yearly"
-    ? yearlyYearSelect
-    : monthYearSelect;
-
-  const year = yearSelect && yearSelect.value
-    ? Number(yearSelect.value)
-    : now.getFullYear();
-
-  let startDate;
-  let endDate;
-
-  if (reportMode === "yearly") {
-    startDate = new Date(year, 0, 1);
-    endDate = new Date(year, 11, 31);
-  } else {
-    startDate = new Date(year, month, 1);
-    endDate = new Date(year, month + 1, 0);
-  }
-
-  const start = formatDateForSupabase(startDate);
-  const end = formatDateForSupabase(endDate);
-
-  const { data, error } = await supabaseClient
-    .from("expenses")
-    .select(`
-      id,
-      amount,
-      expense_date,
-      category_id,
-      user_id,
-      users ( name ),
-      categories ( name, icon )
-    `)
-    .gte("expense_date", start)
-    .lte("expense_date", end)
-    .order("expense_date", { ascending: true });
-
-  if (error) {
-    console.error("Error loading reports:", error);
+  if (!monthSelect || !monthYearSelect || !yearlyYearSelect) {
+    console.error("Cannot load reports: report filters are missing.");
     return;
   }
 
-  let filteredExpenses = data || [];
+  const mode = reportMode === "yearly" ? "yearly" : "monthly";
 
-  if (dataViewMode === "me") {
-    filteredExpenses = filteredExpenses.filter(
-      expense => expense.user_id === currentUserId
-    );
-  } else if (dataViewMode === "other") {
-    filteredExpenses = filteredExpenses.filter(
-      expense => expense.user_id !== currentUserId
-    );
+  const month = Number(monthSelect.value);
+  const yearSelect =
+    mode === "yearly" ? yearlyYearSelect : monthYearSelect;
+  const year = Number(yearSelect.value);
+
+  if (
+    !Number.isInteger(year) ||
+    year < 2000 ||
+    year > new Date().getFullYear()
+  ) {
+    console.error("Invalid report year:", yearSelect.value);
+    return;
   }
 
-  updateReportPeriodLabels(year, month);
-  renderReports(filteredExpenses);
+  if (
+    mode === "monthly" &&
+    (!Number.isInteger(month) || month < 0 || month > 11)
+  ) {
+    console.error("Invalid report month:", monthSelect.value);
+    return;
+  }
+
+  const startDate = mode === "yearly"
+    ? new Date(year, 0, 1)
+    : new Date(year, month, 1);
+
+  const endDate = mode === "yearly"
+    ? new Date(year, 11, 31)
+    : new Date(year, month + 1, 0);
+
+  const start = formatDateForDatabase(startDate);
+  const end = formatDateForDatabase(endDate);
+
+  // Identify this request so older responses cannot overwrite newer ones.
+  loadReports.requestId = (loadReports.requestId || 0) + 1;
+  const requestId = loadReports.requestId;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from("expenses")
+      .select(`
+        id,
+        amount,
+        expense_date,
+        category_id,
+        user_id,
+        users ( name ),
+        categories ( name, icon )
+      `)
+      .gte("expense_date", start)
+      .lte("expense_date", end)
+      .order("expense_date", { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    // Ignore this response if a newer filter request has started.
+    if (requestId !== loadReports.requestId) {
+      return;
+    }
+
+    let filteredExpenses = data || [];
+
+    if (dataViewMode === "me") {
+      filteredExpenses = filteredExpenses.filter(
+        expense => expense.user_id === currentUserId
+      );
+    } else if (dataViewMode === "other") {
+      filteredExpenses = filteredExpenses.filter(
+        expense => expense.user_id !== currentUserId
+      );
+    }
+
+    updateReportPeriodLabels(year, month);
+    renderReports(filteredExpenses);
+
+    console.log("Reports loaded:", {
+      mode,
+      start,
+      end,
+      count: filteredExpenses.length
+    });
+  } catch (error) {
+    console.error("Error loading reports:", error);
+  }
 }
+
+
+async function refreshVisibleReports() {
+  const reportsScreen = document.getElementById("reportsScreen");
+
+  if (reportsScreen && !reportsScreen.classList.contains("hidden")) {
+    await loadReports();
+  }
+}
+
 
 function renderReports(reportExpenses) {
   const total = reportExpenses.reduce(
@@ -1684,6 +1725,11 @@ function renderPersonReport(reportExpenses, mode = "monthly") {
 
 
 function setupReportFilters() {
+  // Prevent duplicate listeners if initialization runs again.
+  if (setupReportFilters.initialized) {
+    return;
+  }
+
   const monthSelect = document.getElementById("reportMonthSelect");
   const monthYearSelect = document.getElementById("reportYearSelect");
   const yearlyYearSelect = document.getElementById("reportYearSelectYearly");
@@ -1694,9 +1740,6 @@ function setupReportFilters() {
   const monthlyFilters = document.getElementById("monthlyReportFilters");
   const yearlyFilters = document.getElementById("yearlyReportFilters");
 
-  const currentDate = new Date();
-  const currentYear = currentDate.getFullYear();
-
   if (
     !monthSelect ||
     !monthYearSelect ||
@@ -1706,28 +1749,57 @@ function setupReportFilters() {
     !monthlyFilters ||
     !yearlyFilters
   ) {
-    console.error("Report filter elements are missing from index.html.");
+    console.error("Report filters are missing from index.html.");
     return;
   }
 
-  monthSelect.value = String(currentDate.getMonth());
+  const now = new Date();
+  const currentYear = now.getFullYear();
 
-  // Populate both year selectors, newest year first.
-  for (let year = currentYear; year >= 2000; year--) {
-    const monthlyOption = new Option(String(year), String(year));
-    const yearlyOption = new Option(String(year), String(year));
-
-    monthYearSelect.add(monthlyOption);
-    yearlyYearSelect.add(yearlyOption);
+  // Only set the month if the selector has no valid selection.
+  if (
+    monthSelect.value === "" ||
+    Number(monthSelect.value) < 0 ||
+    Number(monthSelect.value) > 11
+  ) {
+    monthSelect.value = String(now.getMonth());
   }
 
-  monthYearSelect.value = String(currentYear);
-  yearlyYearSelect.value = String(currentYear);
+  function populateYears(select) {
+    const previousValue = select.value;
 
-  function setReportMode(mode) {
-    reportMode = mode;
+    select.replaceChildren();
 
-    const isMonthly = mode === "monthly";
+    for (let year = currentYear; year >= 2000; year--) {
+      select.add(new Option(String(year), String(year)));
+    }
+
+    const validPreviousYear =
+      previousValue &&
+      Number(previousValue) >= 2000 &&
+      Number(previousValue) <= currentYear;
+
+    select.value = validPreviousYear
+      ? previousValue
+      : String(currentYear);
+  }
+
+  populateYears(monthYearSelect);
+  populateYears(yearlyYearSelect);
+
+  // Keep the year selectors synchronized.
+  function syncYearSelectors(source) {
+    if (source === "monthly") {
+      yearlyYearSelect.value = monthYearSelect.value;
+    } else {
+      monthYearSelect.value = yearlyYearSelect.value;
+    }
+  }
+
+  function setReportMode(mode, shouldReload = true) {
+    reportMode = mode === "yearly" ? "yearly" : "monthly";
+
+    const isMonthly = reportMode === "monthly";
 
     monthlyButton.classList.toggle("active", isMonthly);
     yearlyButton.classList.toggle("active", !isMonthly);
@@ -1738,31 +1810,50 @@ function setupReportFilters() {
     monthlyFilters.classList.toggle("hidden", !isMonthly);
     yearlyFilters.classList.toggle("hidden", isMonthly);
 
-    loadReports();
+    if (shouldReload) {
+      loadReports();
+    }
   }
 
   monthlyButton.addEventListener("click", () => {
-    yearlyYearSelect.value = monthYearSelect.value;
+    syncYearSelectors("yearly");
     setReportMode("monthly");
   });
 
   yearlyButton.addEventListener("click", () => {
-    monthYearSelect.value = yearlyYearSelect.value;
+    syncYearSelectors("monthly");
     setReportMode("yearly");
   });
 
-  monthSelect.addEventListener("change", loadReports);
+  monthSelect.addEventListener("change", () => {
+    if (reportMode === "monthly") {
+      loadReports();
+    }
+  });
 
   monthYearSelect.addEventListener("change", () => {
-    yearlyYearSelect.value = monthYearSelect.value;
-    loadReports();
+    syncYearSelectors("monthly");
+
+    if (reportMode === "monthly") {
+      loadReports();
+    }
   });
 
   yearlyYearSelect.addEventListener("change", () => {
-    monthYearSelect.value = yearlyYearSelect.value;
-    loadReports();
+    syncYearSelectors("yearly");
+
+    if (reportMode === "yearly") {
+      loadReports();
+    }
   });
+
+  // Set the initial visual state without loading data yet.
+  // Reports will load when the Reports screen is opened.
+  setReportMode(reportMode, false);
+
+  setupReportFilters.initialized = true;
 }
+
 
 // Initialize the report controls once.
 setupReportFilters();
@@ -2067,6 +2158,8 @@ async function saveExpense(event) {
     updateDateDisplay();
 
     await loadExpenses();
+    await refreshVisibleReports();
+    
 }
 
 
@@ -2087,6 +2180,7 @@ await loadSavedTheme();
 await loadSavedDataView();
 await setupDataViewOptions();
 await loadExpenses();
+await refreshVisibleReports();
 }
 
 
@@ -2165,6 +2259,7 @@ calendarTodayButton.addEventListener(
         showTodayScreen();
 
         await loadExpenses();
+        await refreshVisibleReports();
     }
 );
 
@@ -2181,6 +2276,7 @@ previousDay.addEventListener("click", async () => {
     updateDateDisplay();
 
     await loadExpenses();
+    await refreshVisibleReports();
 });
 
 
@@ -2427,6 +2523,7 @@ if (dataViewSelect) {
 
     if (!document.getElementById("todayScreen").classList.contains("hidden")) {
       await loadExpenses();
+        await refreshVisibleReports();
     }
 
     if (calendarScreen && !calendarScreen.classList.contains("hidden")) {
@@ -2686,6 +2783,7 @@ async function updateExpense(expenseId) {
     updateDateDisplay();
 
     await loadExpenses();
+    await refreshVisibleReports();
 }
 
 
@@ -2729,6 +2827,7 @@ async function deleteExpense(expenseId) {
     }
 
     await loadExpenses();
+    await refreshVisibleReports();
 }
 // =========================
 // Start
