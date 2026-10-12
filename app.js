@@ -1812,13 +1812,17 @@ function setupReportFilters() {
         reportMode = mode === "yearly" ? "yearly" : "monthly";
 
 if (monthlyFilters) {
-    monthlyFilters.style.display =
-        reportMode === "monthly" ? "" : "none";
+    monthlyFilters.classList.toggle(
+        "hidden",
+        reportMode !== "monthly"
+    );
 }
 
 if (yearlyFilters) {
-    yearlyFilters.style.display =
-        reportMode === "yearly" ? "" : "none";
+    yearlyFilters.classList.toggle(
+        "hidden",
+        reportMode !== "yearly"
+    );
 }
 
         if (monthlyButton) {
