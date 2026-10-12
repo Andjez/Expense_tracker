@@ -2365,8 +2365,13 @@ function showSettingsScreen() {
   document.getElementById("settingsScreen").classList.remove("hidden");
 }
 
-function formatDateForSupabase(date) {
+/* Click outside modal function formatDateForSupabase(date) {
   return date.toISOString().split("T")[0];
+}
+*/
+
+function formatDateForSupabase(date) {
+    return formatDateForDatabase(date);
 }
 
 function formatCurrency(value) {
