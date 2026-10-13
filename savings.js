@@ -121,6 +121,28 @@ function savingsPlanForTopic(topicId) {
 }
 
 
+function savingsCumulativePlanForTopic(topicId) {
+    const end = savingsPeriodEnd();
+
+    return savingsState.plans
+        .filter(plan =>
+            plan.topic_id === topicId &&
+            plan.plan_month <= end
+        )
+        .reduce(
+            (sum, plan) => sum + Number(plan.planned_amount || 0),
+            0
+        );
+}
+
+function savingsAvailableBalanceForTopic(topicId) {
+    const totals = savingsTotals(savingsTransactionsForTopic(topicId));
+
+    return savingsCumulativePlanForTopic(topicId)
+        + totals.credits
+        - totals.debits;
+}
+
 function showSavingsScreen() {
     const screen = document.getElementById("savingsScreen");
 
@@ -206,7 +228,7 @@ function renderSavings() {
         totalPlan += savingsPlanForTopic(topic.id);
         totalCredits += savingsTotals(savingsPeriodTransactions(topic.id)).credits;
         totalDebits += savingsTotals(savingsPeriodTransactions(topic.id)).debits;
-        totalBalance += savingsTotals(savingsTransactionsForTopic(topic.id)).balance;
+        totalBalance += savingsAvailableBalanceForTopic(topic.id);
     });
 
     summary.innerHTML = `
@@ -232,8 +254,9 @@ function renderSavings() {
         ? visibleTopics.map(topic => {
             const plan = savingsPlanForTopic(topic.id);
             const periodTotals = savingsTotals(savingsPeriodTransactions(topic.id));
-            const balance = savingsTotals(savingsTransactionsForTopic(topic.id)).balance;
-            const overspent = periodTotals.debits > plan;
+            const balance = savingsAvailableBalanceForTopic(topic.id);
+const remainingBudget = plan - periodTotals.debits;
+const overspent = remainingBudget < 0;
 
             return `
                 <button class="savings-topic-card"
@@ -245,12 +268,34 @@ function renderSavings() {
                     <span class="savings-topic-description">
                         ${savingsEscape(topic.description || "")}
                     </span>
-                    <span class="savings-topic-metrics">
-                        <span>Plan<strong>${savingsMoney(plan)}</strong></span>
-                        <span>Credits<strong>${savingsMoney(periodTotals.credits)}</strong></span>
-                        <span>Debits<strong>${savingsMoney(periodTotals.debits)}</strong></span>
-                        <span>Balance<strong>${savingsMoney(balance)}</strong></span>
-                    </span>
+                    
+<span class="savings-topic-metrics">
+    <span>
+        Planned
+        <strong>${savingsMoney(plan)}</strong>
+    </span>
+    <span>
+        Credits
+        <strong>${savingsMoney(periodTotals.credits)}</strong>
+    </span>
+    <span>
+        Spent
+        <strong>${savingsMoney(periodTotals.debits)}</strong>
+    </span>
+    <span>
+        Remaining budget
+        <strong class="${remainingBudget < 0 ? 'savings-negative' : 'savings-positive'}">
+            ${savingsMoney(remainingBudget)}
+        </strong>
+    </span>
+    <span>
+        Available balance
+        <strong class="${balance < 0 ? 'savings-negative' : 'savings-positive'}">
+            ${savingsMoney(balance)}
+        </strong>
+    </span>
+</span>
+
                     ${overspent && plan > 0
                         ? `<span class="savings-overspent">Debits exceed this period's plan</span>`
                         : ""}
@@ -294,7 +339,8 @@ function renderSavingsDetail() {
 
     const plan = savingsPlanForTopic(topic.id);
     const periodTotals = savingsTotals(savingsPeriodTransactions(topic.id));
-    const balance = savingsTotals(savingsTransactionsForTopic(topic.id)).balance;
+    const balance = savingsAvailableBalanceForTopic(topic.id);
+const remainingBudget = plan - periodTotals.debits;
     const periodTransactions = savingsPeriodTransactions(topic.id)
         .sort((a, b) =>
             b.transaction_date.localeCompare(a.transaction_date) ||
@@ -306,15 +352,31 @@ function renderSavingsDetail() {
         <p>${savingsEscape(topic.description || "")}</p>
 
         <div class="savings-detail-metrics">
-            <div><span>Plan for ${savingsEscape(savingsPeriodLabel())}</span>
-                <strong>${savingsMoney(plan)}</strong></div>
-            <div><span>Credits this period</span>
-                <strong>${savingsMoney(periodTotals.credits)}</strong></div>
-            <div><span>Debits this period</span>
-                <strong>${savingsMoney(periodTotals.debits)}</strong></div>
-            <div><span>Balance carried forward</span>
-                <strong>${savingsMoney(balance)}</strong></div>
-        </div>
+    <div>
+        <span>Plan for ${savingsEscape(savingsPeriodLabel())}</span>
+        <strong>${savingsMoney(plan)}</strong>
+    </div>
+    <div>
+        <span>Credits this period</span>
+        <strong>${savingsMoney(periodTotals.credits)}</strong>
+    </div>
+    <div>
+        <span>Spent this period</span>
+        <strong>${savingsMoney(periodTotals.debits)}</strong>
+    </div>
+    <div>
+        <span>Remaining budget</span>
+        <strong class="${remainingBudget < 0 ? 'savings-negative' : 'savings-positive'}">
+            ${savingsMoney(remainingBudget)}
+        </strong>
+    </div>
+    <div>
+        <span>Available balance</span>
+        <strong class="${balance < 0 ? 'savings-negative' : 'savings-positive'}">
+            ${savingsMoney(balance)}
+        </strong>
+    </div>
+</div>
 
         <div class="savings-actions">
             <button type="button" id="editSavingsTopicButton">Edit topic</button>
