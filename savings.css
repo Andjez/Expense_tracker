@@ -702,7 +702,17 @@ body.dark-theme .savings-form-error {
     color: #ff9299;
     background: #402629;
 }
+/* Savings screen heading — dark theme */
+body.dark-theme #savingsScreen .savings-header,
+body.dark-theme #savingsScreen .savings-header h1,
+body.dark-theme #savingsScreen .savings-header h2,
+body.dark-theme #savingsScreen .savings-header p {
+  color: #f1f1f1 !important;
+}
 
+body.dark-theme #savingsScreen .savings-header p {
+  color: #bdbdbd !important;
+}
 /* ---------- Small screens ---------- */
 
 @media (max-width: 380px) {
