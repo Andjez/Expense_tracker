@@ -313,6 +313,58 @@
 
 </section>
 
+<!-- Savings Screen -->
+<section id="savingsScreen" class="app-screen hidden">
+
+    <section class="savings-header">
+        <h2>Savings</h2>
+        <p>Plan, save, and track spending by topic.</p>
+    </section>
+
+    <section class="savings-filters">
+        <div>
+            <label for="savingsPeriod">View</label>
+            <select id="savingsPeriod" class="settings-select">
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+            </select>
+        </div>
+
+        <div id="savingsMonthField">
+            <label for="savingsMonth">Month</label>
+            <input id="savingsMonth" type="month">
+        </div>
+
+        <div id="savingsYearField" class="hidden">
+            <label for="savingsYear">Year</label>
+            <select id="savingsYear" class="settings-select"></select>
+        </div>
+    </section>
+
+    <section id="savingsSummary" class="savings-summary"></section>
+
+    <div class="savings-section-heading">
+        <h3>Savings topics</h3>
+        <button id="addSavingsTopicButton" type="button">
+            + Add Topic
+        </button>
+    </div>
+
+    <div id="savingsTopicList" class="savings-topic-list">
+        <p>Loading savings...</p>
+    </div>
+
+    <section id="savingsDetail" class="savings-detail hidden">
+        <button id="backToSavingsTopics" type="button">
+            ← All topics
+        </button>
+
+        <div id="savingsTopicDetail"></div>
+        <div id="savingsTransactionList"></div>
+    </section>
+
+</section>
+
 <!-- Settings Screen -->
 <section id="settingsScreen" class="app-screen hidden">
 
@@ -433,6 +485,11 @@
                 <span>📊</span>
                 <small>Reports</small>
             </button>
+
+            <button class="nav-item" data-tab="savings">
+    <span>💰</span>
+    <small>Savings</small>
+</button>
 
             <button class="nav-item" data-tab="settings">
                 <span>⚙️</span>
@@ -580,6 +637,8 @@
 
 </div>
     <script src="app.js"></script>
+<script src="savings.js"></script>
+
 
 </body>
 </html>
