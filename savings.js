@@ -9,6 +9,7 @@ const savingsState = {
     topics: [],
     plans: [],
     transactions: [],
+   users: [],
     selectedTopicId: null,
     period: "monthly",
     month: new Date().toISOString().slice(0, 7),
@@ -222,24 +223,33 @@ function showSavingsScreen() {
 }
 
 
+
 async function loadSavingsData() {
-    const [topicsResult, plansResult, transactionsResult] =
-        await Promise.all([
-            supabaseClient
-                .from("savings_topics")
-                .select("*")
-                .order("name"),
+    const [
+        topicsResult,
+        plansResult,
+        transactionsResult,
+        usersResult
+    ] = await Promise.all([
+        supabaseClient
+            .from("savings_topics")
+            .select("*")
+            .order("name"),
 
-            supabaseClient
-                .from("savings_month_plans")
-                .select("*")
-                .order("plan_month"),
+        supabaseClient
+            .from("savings_month_plans")
+            .select("*")
+            .order("plan_month"),
 
-            supabaseClient
-                .from("savings_transactions")
-                .select("*")
-                .order("transaction_date", { ascending: false })
-        ]);
+        supabaseClient
+            .from("savings_transactions")
+            .select("*")
+            .order("transaction_date", { ascending: false }),
+
+        supabaseClient
+            .from("users")
+            .select("id, name")
+    ]);
 
     if (topicsResult.error) throw topicsResult.error;
     if (plansResult.error) throw plansResult.error;
@@ -248,6 +258,16 @@ async function loadSavingsData() {
     savingsState.topics = topicsResult.data || [];
     savingsState.plans = plansResult.data || [];
     savingsState.transactions = transactionsResult.data || [];
+
+    if (usersResult.error) {
+        console.warn(
+            "Savings: couldn't load user names:",
+            usersResult.error
+        );
+        savingsState.users = [];
+    } else {
+        savingsState.users = usersResult.data || [];
+    }
 
     renderSavings();
 }
@@ -438,7 +458,22 @@ const remainingBudget = plan - periodTotals.debits;
                 <div class="savings-transaction-main">
                     <strong>${savingsEscape(transaction.description ||
                         (transaction.transaction_type === "credit" ? "Credit" : "Debit"))}</strong>
-                    <span>${savingsEscape(transaction.transaction_date)}</span>
+                    <span>
+    ${savingsEscape(transaction.transaction_date)}
+    · Entered by ${savingsEscape(
+        savingsState.users.find(
+            user => user.id === transaction.created_by
+        )?.name ||
+        (
+            transaction.created_by &&
+            typeof currentUserId !== "undefined" &&
+            transaction.created_by === currentUserId &&
+            typeof currentUserName !== "undefined"
+                ? currentUserName
+                : "Unknown"
+        )
+    )}
+</span>
                 </div>
                 <strong class="${transaction.transaction_type === "credit"
                     ? "savings-credit" : "savings-debit"}">
@@ -1113,15 +1148,29 @@ async function addSavingsTransaction(topic, type) {
         });
     }
 
-    const { error } = await supabaseClient
-        .from("savings_transactions")
-        .insert({
-            topic_id: topic.id,
-            transaction_type: values.transaction_type,
-            amount,
-            transaction_date: values.transaction_date,
-            description: (values.description || "").trim()
-        });
+
+const creatorId =
+    typeof currentUserId !== "undefined"
+        ? currentUserId
+        : null;
+
+if (!creatorId) {
+    return savingsShowSaveError("adding the transaction", {
+        message: "The current user could not be identified. Please reload the app and try again."
+    });
+}
+
+const { error } = await supabaseClient
+    .from("savings_transactions")
+    .insert({
+        topic_id: topic.id,
+        transaction_type: values.transaction_type,
+        amount,
+        transaction_date: values.transaction_date,
+        description: (values.description || "").trim(),
+        created_by: creatorId
+    });
+
 
     if (error) {
         return savingsShowSaveError("adding the transaction", error);
