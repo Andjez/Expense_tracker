@@ -2847,3 +2847,24 @@ body.dark-theme .error-message {
   color: #ff8a8a;
 }
 
+
+/* Savings modal in dark theme */
+body.dark-theme .savings-modal-card {
+    background: #242424;
+    color: #f1f1f1;
+    border-color: #444444;
+}
+
+body.dark-theme .savings-modal-card input,
+body.dark-theme .savings-modal-card select,
+body.dark-theme .savings-modal-card textarea {
+    background: #292929;
+    color: #f1f1f1;
+    border-color: #444444;
+}
+
+body.dark-theme .savings-modal-card label,
+body.dark-theme .savings-modal-card small {
+    color: #d0d0d0;
+}
+
