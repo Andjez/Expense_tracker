@@ -785,3 +785,106 @@
     min-width: 0;
     margin: 0;
 }
+
+/* Keep Savings content aligned to the same left and right edges */
+#savingsScreen,
+#savingsScreen .savings-summary,
+#savingsScreen .savings-section-heading,
+#savingsScreen .savings-topic-list,
+#savingsScreen .savings-detail {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+#savingsScreen .savings-topic-list {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+#savingsScreen .savings-topic-card {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Savings: default light theme */
+#savingsScreen .savings-summary-card,
+#savingsScreen .savings-topic-card,
+#savingsScreen .savings-detail,
+#savingsScreen .savings-filters,
+#savingsScreen .savings-transaction {
+    background: var(--card-bg, #ffffff);
+    color: var(--text-color, #222222);
+    border-color: var(--border-color, #e0e0e0);
+}
+
+#savingsScreen .savings-topic-title,
+#savingsScreen .savings-summary-card strong,
+#savingsScreen .savings-topic-card strong,
+#savingsScreen .savings-detail strong,
+#savingsScreen .savings-transaction strong {
+    color: inherit;
+}
+
+#savingsScreen .savings-topic-description,
+#savingsScreen .savings-summary-card span,
+#savingsScreen .savings-detail span,
+#savingsScreen .savings-transaction span {
+    color: var(--muted-text, #666666);
+}
+
+/* Savings: dark theme */
+body.dark-theme #savingsScreen .savings-summary-card,
+body.dark-theme #savingsScreen .savings-topic-card,
+body.dark-theme #savingsScreen .savings-detail,
+body.dark-theme #savingsScreen .savings-filters,
+body.dark-theme #savingsScreen .savings-transaction {
+    background: #242424;
+    color: #f1f1f1;
+    border-color: #444444;
+}
+
+body.dark-theme #savingsScreen .savings-topic-title,
+body.dark-theme #savingsScreen .savings-summary-card strong,
+body.dark-theme #savingsScreen .savings-topic-card strong,
+body.dark-theme #savingsScreen .savings-detail strong,
+body.dark-theme #savingsScreen .savings-transaction strong {
+    color: #f1f1f1;
+}
+
+body.dark-theme #savingsScreen .savings-topic-description,
+body.dark-theme #savingsScreen .savings-summary-card span,
+body.dark-theme #savingsScreen .savings-detail span,
+body.dark-theme #savingsScreen .savings-transaction span {
+    color: #b5b5b5;
+}
+
+/* Dark theme form controls */
+body.dark-theme #savingsScreen input,
+body.dark-theme #savingsScreen select,
+body.dark-theme #savingsScreen textarea {
+    background: #292929;
+    color: #f1f1f1;
+    border-color: #444444;
+}
+
+body.dark-theme #savingsScreen input::placeholder,
+body.dark-theme #savingsScreen textarea::placeholder {
+    color: #999999;
+}
+
+/* Preserve meaningful financial colors in both themes */
+#savingsScreen .savings-positive,
+#savingsScreen .savings-credit {
+    color: #16a34a !important;
+}
+
+#savingsScreen .savings-negative,
+#savingsScreen .savings-debit {
+    color: #ff4545 !important;
+}
