@@ -120,6 +120,44 @@ function savingsPlanForTopic(topicId) {
         .reduce((sum, plan) => sum + Number(plan.planned_amount), 0);
 }
 
+
+function showSavingsScreen() {
+    const screen = document.getElementById("savingsScreen");
+
+    if (!screen) {
+        console.error(
+            'Savings screen not found. Check that index.html contains id="savingsScreen".'
+        );
+        return;
+    }
+
+    document.querySelectorAll(".app-screen").forEach(item => {
+        item.classList.add("hidden");
+    });
+
+    screen.classList.remove("hidden");
+
+    // Hide the expense-specific add button while Savings is open.
+    if (typeof addExpenseButton !== "undefined" && addExpenseButton) {
+        addExpenseButton.classList.add("hidden");
+    }
+
+    loadSavingsData().catch(error => {
+        console.error("Failed to load savings data:", error);
+
+        const topicList = document.getElementById("savingsTopicList");
+        if (topicList) {
+            topicList.innerHTML = `
+                <div class="empty-state">
+                    Couldn't load savings data. Please check your connection
+                    and Supabase permissions, then try again.
+                </div>
+            `;
+        }
+    });
+}
+
+
 async function loadSavingsData() {
     const [topicsResult, plansResult, transactionsResult] =
         await Promise.all([
