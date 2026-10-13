@@ -1192,6 +1192,7 @@ async function showCalendarScreen() {
   });
 
   document.getElementById("calendarScreen").classList.remove("hidden");
+  addExpenseButton.classList.remove("hidden");
 
   calendarDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
 
@@ -1206,6 +1207,7 @@ function showReportsScreen() {
   });
 
   document.getElementById("reportsScreen").classList.remove("hidden");
+  addExpenseButton.classList.remove("hidden");
 }
 
 function showTodayScreen() {
@@ -1214,6 +1216,7 @@ function showTodayScreen() {
   });
 
   document.getElementById("todayScreen").classList.remove("hidden");
+    addExpenseButton.classList.remove("hidden");
 }
 
 
@@ -2528,7 +2531,10 @@ loadExpenses();
     } else if (tab === "reports") {
       showReportsScreen();
       loadReports();
-
+        
+} else if (tab === "savings") {
+    showSavingsScreen();
+        
     } else if (tab === "settings") {
       showSettingsScreen();
     }
@@ -2809,6 +2815,7 @@ function showSettingsScreen() {
   });
 
   document.getElementById("settingsScreen").classList.remove("hidden");
+  addExpenseButton.classList.remove("hidden");
 }
 
 /* Click outside modal function formatDateForSupabase(date) {
