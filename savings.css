@@ -798,3 +798,120 @@ body.dark-theme #savingsScreen .savings-header p {
         max-width: 100%;
     }
 }
+
+/* =========================================================
+   SAVINGS SPENDING PROGRESS BAR
+   Used in topic cards and topic detail.
+   ========================================================= */
+
+#savingsScreen .savings-progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    margin: 2px 0;
+    color: var(--savings-text);
+}
+
+#savingsScreen .savings-progress-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 5px 12px;
+    width: 100%;
+    min-width: 0;
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
+#savingsScreen .savings-progress-heading > span {
+    color: var(--savings-muted);
+}
+
+#savingsScreen .savings-progress-heading > strong {
+    color: var(--savings-text);
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+#savingsScreen .savings-progress-track {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 9px;
+    min-height: 9px;
+    overflow: hidden;
+    background: #e8ebf0;
+    border-radius: 999px;
+}
+
+#savingsScreen .savings-progress-fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    background: #39845b;
+    border-radius: inherit;
+    transition: width 0.3s ease;
+}
+
+#savingsScreen .savings-progress-section.is-normal
+.savings-progress-fill {
+    background: #26945b;
+}
+
+#savingsScreen .savings-progress-section.is-over
+.savings-progress-fill {
+    background: #df3945;
+}
+
+#savingsScreen .savings-progress-section.is-over
+.savings-progress-heading > strong {
+    color: #c5222d;
+}
+
+#savingsScreen .savings-progress-caption {
+    display: block;
+    color: var(--savings-muted);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+#savingsScreen .savings-progress-no-plan {
+    color: var(--savings-muted) !important;
+    font-weight: 600;
+}
+
+#savingsScreen .savings-progress-track-neutral {
+    background: #e8ebf0;
+}
+
+body.dark-theme #savingsScreen .savings-progress-track,
+body.dark-theme #savingsScreen .savings-progress-track-neutral {
+    background: #454545;
+}
+
+body.dark-theme #savingsScreen .savings-progress-section.is-normal
+.savings-progress-fill {
+    background: #55d98a;
+}
+
+body.dark-theme #savingsScreen .savings-progress-section.is-over
+.savings-progress-fill {
+    background: #ff646e;
+}
+
+body.dark-theme #savingsScreen .savings-progress-section.is-over
+.savings-progress-heading > strong {
+    color: #ff858d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #savingsScreen .savings-progress-fill {
+        transition: none;
+    }
+}
