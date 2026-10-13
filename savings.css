@@ -765,3 +765,36 @@ body.dark-theme #savingsScreen .savings-header p {
 #savingsScreen .savings-filters > * {
     min-width: 0;
 }
+
+/* Fix month picker clipping on mobile */
+#savingsScreen #savingsMonthField {
+    min-width: 0;
+    width: 100%;
+}
+
+#savingsScreen #savingsMonth {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+/* Give the month field more room on narrow screens */
+@media (max-width: 480px) {
+    #savingsScreen .savings-filters {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #savingsScreen .savings-filters > * {
+        width: 100%;
+        min-width: 0;
+    }
+
+    #savingsScreen #savingsMonthField,
+    #savingsScreen #savingsMonth {
+        width: 100%;
+        max-width: 100%;
+    }
+}
