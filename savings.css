@@ -1,0 +1,238 @@
+
+/* =========================
+   Savings screen
+   ========================= */
+
+.savings-header {
+    margin: 20px 16px;
+}
+
+.savings-header h2 {
+    margin: 0 0 6px;
+}
+
+.savings-header p {
+    margin: 0;
+    color: var(--secondary-text, #777);
+}
+
+.savings-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px;
+}
+
+.savings-filters > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.savings-filters label {
+    font-size: 13px;
+    color: var(--secondary-text, #777);
+}
+
+.savings-filters input,
+.savings-filters select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.savings-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 16px;
+}
+
+.savings-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    border: 1px solid var(--border-color, #e6e6e6);
+    border-radius: 14px;
+    background: var(--card-bg, #fff);
+    min-width: 0;
+}
+
+.savings-summary-card span,
+.savings-topic-metrics span,
+.savings-detail-metrics span {
+    font-size: 12px;
+    color: var(--secondary-text, #777);
+}
+
+.savings-summary-card strong {
+    font-size: 17px;
+    overflow-wrap: anywhere;
+}
+
+.savings-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 22px 16px 12px;
+}
+
+.savings-section-heading h3 {
+    margin: 0;
+}
+
+.savings-section-heading button,
+.savings-actions button,
+.savings-transaction-actions button,
+#backToSavingsTopics {
+    padding: 9px 12px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 9px;
+    background: var(--card-bg, #fff);
+    color: inherit;
+    cursor: pointer;
+}
+
+.savings-topic-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0 16px 24px;
+}
+
+.savings-topic-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    padding: 16px;
+    text-align: left;
+    color: inherit;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e6e6e6);
+    border-radius: 15px;
+    cursor: pointer;
+}
+
+.savings-topic-title {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.savings-topic-description {
+    font-size: 13px;
+    color: var(--secondary-text, #777);
+}
+
+.savings-topic-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.savings-topic-metrics span,
+.savings-detail-metrics div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.savings-topic-metrics strong {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.savings-open-hint {
+    font-size: 13px;
+    color: var(--secondary-text, #777);
+}
+
+.savings-overspent {
+    color: #b45309;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.savings-detail {
+    margin: 16px;
+    padding-bottom: 30px;
+}
+
+.savings-detail h3 {
+    margin: 18px 0 6px;
+}
+
+.savings-detail-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.savings-detail-metrics div {
+    padding: 13px;
+    border: 1px solid var(--border-color, #e6e6e6);
+    border-radius: 12px;
+}
+
+.savings-detail-metrics strong {
+    overflow-wrap: anywhere;
+}
+
+.savings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 18px 0 24px;
+}
+
+.savings-transaction {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-color, #e6e6e6);
+}
+
+.savings-transaction-main {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.savings-transaction-main span {
+    font-size: 12px;
+    color: var(--secondary-text, #777);
+}
+
+.savings-transaction-main strong {
+    overflow-wrap: anywhere;
+}
+
+.savings-credit {
+    color: #15803d;
+}
+
+.savings-debit {
+    color: #b91c1c;
+}
+
+.savings-transaction-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+}
+
+@media (min-width: 600px) {
+    .savings-summary {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .savings-topic-metrics {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
