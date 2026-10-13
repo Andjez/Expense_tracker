@@ -915,3 +915,27 @@ body.dark-theme #savingsScreen .savings-progress-section.is-over
         transition: none;
     }
 }
+
+.savings-topic-card .savings-topic-metrics {
+    display: none;
+}
+
+.savings-topic-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    font-size: 0.9rem;
+}
+
+.savings-topic-balance > span {
+    opacity: 0.75;
+}
+
+.savings-topic-balance strong {
+    font-size: 1rem;
+    font-weight: 700;
+}
