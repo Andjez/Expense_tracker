@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "our-expenses-v3.2.11";
+const CACHE_NAME = "our-expenses-v3.3.0";
 
 const APP_SHELL = [
     "./",
