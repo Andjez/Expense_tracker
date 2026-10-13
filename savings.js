@@ -335,98 +335,393 @@ function renderSavingsDetail() {
     });
 }
 
-async function addSavingsTopic() {
-    const name = prompt("Savings topic name:");
-    if (name === null) return;
+/* =========================================================
+   SAVINGS FORM MODAL
+   Reusable in-app form; no browser prompt/alert popups.
+   ========================================================= */
 
-    if (!name.trim()) {
-        alert("Please enter a topic name.");
-        return;
-    }
+function savingsOpenForm({ title, fields, initial = {}, saveLabel = "Save" }) {
+    return new Promise(resolve => {
+        const previous = document.getElementById("savingsFormModal");
+        if (previous) previous.remove();
 
-    const description = prompt("Description (optional):") || "";
+        const modal = document.createElement("div");
+        modal.id = "savingsFormModal";
+        modal.className = "savings-modal-overlay";
 
-    const { error } = await supabaseClient
-        .from("savings_topics")
-        .insert({
-            name: name.trim(),
-            description: description.trim()
+        const fieldHTML = fields.map(field => {
+            const value = initial[field.name] ?? field.value ?? "";
+            const safeValue = savingsEscape(value);
+
+            let control;
+
+            if (field.type === "select") {
+                control = `
+                    <select name="${savingsEscape(field.name)}"
+                        ${field.required === false ? "" : "required"}>
+                        ${(field.options || []).map(option => `
+                            <option value="${savingsEscape(option.value)}"
+                                ${String(option.value) === String(value) ? "selected" : ""}>
+                                ${savingsEscape(option.label)}
+                            </option>
+                        `).join("")}
+                    </select>`;
+            } else if (field.type === "textarea") {
+                control = `
+                    <textarea name="${savingsEscape(field.name)}"
+                        rows="3"
+                        ${field.required === false ? "" : "required"}>${safeValue}</textarea>`;
+            } else {
+                control = `
+                    <input
+                        name="${savingsEscape(field.name)}"
+                        type="${savingsEscape(field.type || "text")}"
+                        value="${safeValue}"
+                        ${field.min !== undefined ? `min="${field.min}"` : ""}
+                        ${field.step !== undefined ? `step="${field.step}"` : ""}
+                        ${field.maxlength ? `maxlength="${field.maxlength}"` : ""}
+                        ${field.required === false ? "" : "required"}
+                    >`;
+            }
+
+            return `
+                <label class="savings-form-field">
+                    <span>${savingsEscape(field.label)}</span>
+                    ${control}
+                    ${field.help ? `<small>${savingsEscape(field.help)}</small>` : ""}
+                </label>`;
+        }).join("");
+
+        modal.innerHTML = `
+            <div class="savings-modal-card" role="dialog"
+                aria-modal="true" aria-labelledby="savingsModalTitle">
+                <div class="savings-modal-header">
+                    <h3 id="savingsModalTitle">${savingsEscape(title)}</h3>
+                    <button type="button" class="savings-modal-close"
+                        aria-label="Close">×</button>
+                </div>
+                <form class="savings-modal-form">
+                    <div class="savings-modal-fields">${fieldHTML}</div>
+                    <div class="savings-modal-actions">
+                        <button type="button" class="savings-cancel-button">
+                            Cancel
+                        </button>
+                        <button type="submit" class="savings-save-button">
+                            ${savingsEscape(saveLabel)}
+                        </button>
+                    </div>
+                    <p class="savings-form-error hidden" role="alert"></p>
+                </form>
+            </div>`;
+
+        document.body.appendChild(modal);
+
+        const form = modal.querySelector("form");
+        const errorBox = modal.querySelector(".savings-form-error");
+        let finished = false;
+
+        function close(result) {
+            if (finished) return;
+            finished = true;
+            modal.remove();
+            resolve(result);
+        }
+
+        modal.querySelector(".savings-modal-close")
+            .addEventListener("click", () => close(null));
+
+        modal.querySelector(".savings-cancel-button")
+            .addEventListener("click", () => close(null));
+
+        modal.addEventListener("click", event => {
+            if (event.target === modal) close(null);
         });
 
-    if (error) {
-        alert(error.code === "23505"
-            ? "A topic with this name already exists."
-            : `Could not add topic: ${error.message}`);
-        return;
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+
+            const values = Object.fromEntries(new FormData(form).entries());
+
+            for (const field of fields) {
+                const value = String(values[field.name] ?? "").trim();
+
+                if (field.required !== false && !value) {
+                    errorBox.textContent = `${field.label} is required.`;
+                    errorBox.classList.remove("hidden");
+                    return;
+                }
+
+                if (field.type === "number" && value !== "") {
+                    const number = Number(value);
+
+                    if (!Number.isFinite(number) ||
+                        (field.min !== undefined && number < field.min)) {
+                        errorBox.textContent =
+                            `${field.label} must be at least ${field.min ?? 0}.`;
+                        errorBox.classList.remove("hidden");
+                        return;
+                    }
+                }
+            }
+
+            close(values);
+        });
+
+        const firstInput = form.querySelector("input, select, textarea");
+        if (firstInput) firstInput.focus();
+    });
+}
+
+/* A local date helper avoids UTC date shifts on some devices. */
+function savingsTodayLocal() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function savingsValidDate(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+    const date = new Date(`${value}T00:00:00`);
+    return !Number.isNaN(date.getTime()) &&
+        date.getFullYear() === Number(value.slice(0, 4)) &&
+        date.getMonth() + 1 === Number(value.slice(5, 7)) &&
+        date.getDate() === Number(value.slice(8, 10));
+}
+
+async function savingsShowSaveError(action, error) {
+    console.error(`Savings: ${action} failed`, error);
+    const message = error?.message || "Please try again.";
+
+    await savingsOpenForm({
+        title: "Couldn't save changes",
+        fields: [{
+            name: "message",
+            label: "Details",
+            type: "textarea",
+            required: false
+        }],
+        initial: { message },
+        saveLabel: "Close"
+    });
+}
+
+
+async function addSavingsTopic() {
+    const defaultMonth = savingsState.period === "monthly"
+        ? savingsState.month
+        : `${savingsState.year}-01`;
+
+    const values = await savingsOpenForm({
+        title: "Add savings topic",
+        fields: [
+            { name: "name", label: "Topic name", maxlength: 100 },
+            {
+                name: "description",
+                label: "Description (optional)",
+                type: "textarea",
+                required: false
+            },
+            {
+                name: "plan_month",
+                label: "Plan month",
+                type: "month",
+                value: defaultMonth
+            },
+            {
+                name: "planned_amount",
+                label: "Planned amount (₹)",
+                type: "number",
+                min: 0,
+                step: "0.01",
+                value: "0"
+            }
+        ],
+        saveLabel: "Save topic"
+    });
+
+    if (!values) return;
+
+    const name = values.name.trim();
+    const description = (values.description || "").trim();
+    const planMonth = values.plan_month;
+    const plannedAmount = Number(values.planned_amount);
+
+    if (!name || !/^\d{4}-(0[1-9]|1[0-2])$/.test(planMonth) ||
+        !Number.isFinite(plannedAmount) || plannedAmount < 0) {
+        return savingsShowSaveError("validation", {
+            message: "Check the topic name, plan month and planned amount."
+        });
     }
 
+    const { data: topic, error: topicError } = await supabaseClient
+        .from("savings_topics")
+        .insert({ name, description })
+        .select()
+        .single();
+
+    if (topicError) {
+        return savingsShowSaveError("creating the topic", topicError);
+    }
+
+    const { error: planError } = await supabaseClient
+        .from("savings_month_plans")
+        .upsert({
+            topic_id: topic.id,
+            plan_month: `${planMonth}-01`,
+            planned_amount: plannedAmount,
+            updated_at: new Date().toISOString()
+        }, { onConflict: "topic_id,plan_month" });
+
+    if (planError) {
+        savingsState.selectedTopicId = topic.id;
+        await loadSavingsData().catch(console.error);
+        return savingsShowSaveError(
+            "saving the monthly plan; the topic was created",
+            planError
+        );
+    }
+
+    savingsState.selectedTopicId = topic.id;
     await loadSavingsData();
 }
 
-async function editSavingsTopic(topic) {
-    const name = prompt("Edit topic name:", topic.name);
-    if (name === null) return;
 
-    if (!name.trim()) {
-        alert("Topic name cannot be empty.");
-        return;
+async function editSavingsTopic(topic) {
+    const currentMonth = savingsState.period === "monthly"
+        ? savingsState.month
+        : `${savingsState.year}-01`;
+
+    const existingPlan = savingsState.plans.find(plan =>
+        plan.topic_id === topic.id &&
+        plan.plan_month === `${currentMonth}-01`
+    );
+
+    const values = await savingsOpenForm({
+        title: "Edit savings topic",
+        fields: [
+            { name: "name", label: "Topic name", maxlength: 100 },
+            {
+                name: "description",
+                label: "Description (optional)",
+                type: "textarea",
+                required: false
+            },
+            {
+                name: "plan_month",
+                label: "Plan month",
+                type: "month",
+                value: currentMonth
+            },
+            {
+                name: "planned_amount",
+                label: "Planned amount (₹)",
+                type: "number",
+                min: 0,
+                step: "0.01",
+                value: existingPlan?.planned_amount ?? 0
+            }
+        ],
+        initial: {
+            name: topic.name,
+            description: topic.description || "",
+            plan_month: currentMonth,
+            planned_amount: existingPlan?.planned_amount ?? 0
+        },
+        saveLabel: "Save changes"
+    });
+
+    if (!values) return;
+
+    const name = values.name.trim();
+    const planMonth = values.plan_month;
+    const plannedAmount = Number(values.planned_amount);
+
+    if (!name || !/^\d{4}-(0[1-9]|1[0-2])$/.test(planMonth) ||
+        !Number.isFinite(plannedAmount) || plannedAmount < 0) {
+        return savingsShowSaveError("validation", {
+            message: "Check the topic name, month and planned amount."
+        });
     }
 
-    const description = prompt(
-        "Edit description:",
-        topic.description || ""
-    );
-    if (description === null) return;
-
-    const { error } = await supabaseClient
+    const { error: topicError } = await supabaseClient
         .from("savings_topics")
         .update({
-            name: name.trim(),
-            description: description.trim(),
+            name,
+            description: (values.description || "").trim(),
             updated_at: new Date().toISOString()
         })
         .eq("id", topic.id);
 
-    if (error) {
-        alert(`Could not update topic: ${error.message}`);
-        return;
+    if (topicError) {
+        return savingsShowSaveError("updating the topic", topicError);
     }
 
+    const { error: planError } = await supabaseClient
+        .from("savings_month_plans")
+        .upsert({
+            topic_id: topic.id,
+            plan_month: `${planMonth}-01`,
+            planned_amount: plannedAmount,
+            updated_at: new Date().toISOString()
+        }, { onConflict: "topic_id,plan_month" });
+
+    if (planError) {
+        await loadSavingsData().catch(console.error);
+        return savingsShowSaveError("saving the monthly plan", planError);
+    }
+
+    savingsState.selectedTopicId = topic.id;
     await loadSavingsData();
 }
 
 async function setSavingsPlan(topic) {
-    const defaultPlan = savingsState.period === "monthly"
+    const defaultMonth = savingsState.period === "monthly"
         ? savingsState.month
         : `${savingsState.year}-01`;
 
-    const month = prompt(
-        "Plan month (YYYY-MM):",
-        defaultPlan
-    );
-
-    if (month === null) return;
-
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-        alert("Enter the month as YYYY-MM.");
-        return;
-    }
-
     const existing = savingsState.plans.find(plan =>
         plan.topic_id === topic.id &&
-        plan.plan_month === `${month}-01`
+        plan.plan_month === `${defaultMonth}-01`
     );
 
-    const amount = prompt(
-        "Planned amount:",
-        existing ? existing.planned_amount : "0"
-    );
+    const values = await savingsOpenForm({
+        title: "Set monthly plan",
+        fields: [
+            {
+                name: "plan_month",
+                label: "Plan month",
+                type: "month",
+                value: defaultMonth
+            },
+            {
+                name: "planned_amount",
+                label: "Planned amount (₹)",
+                type: "number",
+                min: 0,
+                step: "0.01",
+                value: existing?.planned_amount ?? 0
+            }
+        ],
+        initial: {
+            plan_month: defaultMonth,
+            planned_amount: existing?.planned_amount ?? 0
+        },
+        saveLabel: "Save plan"
+    });
 
-    if (amount === null) return;
+    if (!values) return;
 
-    if (!Number.isFinite(Number(amount)) || Number(amount) < 0) {
-        alert("Enter a valid non-negative amount.");
-        return;
+    const month = values.plan_month;
+    const amount = Number(values.planned_amount);
+
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
+        !Number.isFinite(amount) || amount < 0) {
+        return savingsShowSaveError("validation", {
+            message: "Check the plan month and amount."
+        });
     }
 
     const { error } = await supabaseClient
@@ -434,119 +729,172 @@ async function setSavingsPlan(topic) {
         .upsert({
             topic_id: topic.id,
             plan_month: `${month}-01`,
-            planned_amount: Number(amount),
+            planned_amount: amount,
             updated_at: new Date().toISOString()
-        }, {
-            onConflict: "topic_id,plan_month"
-        });
+        }, { onConflict: "topic_id,plan_month" });
 
     if (error) {
-        alert(`Could not save plan: ${error.message}`);
-        return;
+        return savingsShowSaveError("saving the monthly plan", error);
     }
 
     await loadSavingsData();
 }
 
+
 async function addSavingsTransaction(topic, type) {
-    const amount = prompt(
-        `${type === "credit" ? "Credit" : "Debit"} amount:`
-    );
-    if (amount === null) return;
+    const values = await savingsOpenForm({
+        title: type === "credit" ? "Add credit" : "Add debit",
+        fields: [
+            {
+                name: "transaction_type",
+                label: "Transaction type",
+                type: "select",
+                options: [
+                    { value: "credit", label: "Credit — money in" },
+                    { value: "debit", label: "Debit — money out" }
+                ],
+                value: type
+            },
+            {
+                name: "amount",
+                label: "Amount (₹)",
+                type: "number",
+                min: 0.01,
+                step: "0.01"
+            },
+            {
+                name: "transaction_date",
+                label: "Date",
+                type: "date",
+                value: savingsTodayLocal()
+            },
+            {
+                name: "description",
+                label: "Description (optional)",
+                type: "textarea",
+                required: false
+            }
+        ],
+        initial: {
+            transaction_type: type,
+            transaction_date: savingsTodayLocal(),
+            description: ""
+        },
+        saveLabel: "Save transaction"
+    });
 
-    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
-        alert("Enter an amount greater than zero.");
-        return;
+    if (!values) return;
+
+    const amount = Number(values.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0 ||
+        !savingsValidDate(values.transaction_date) ||
+        !["credit", "debit"].includes(values.transaction_type)) {
+        return savingsShowSaveError("validation", {
+            message: "Check the transaction type, amount and date."
+        });
     }
-
-    const date = prompt(
-        "Transaction date (YYYY-MM-DD):",
-        new Date().toISOString().slice(0, 10)
-    );
-    if (date === null) return;
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-        Number.isNaN(Date.parse(`${date}T00:00:00Z`))) {
-        alert("Enter the date as YYYY-MM-DD.");
-        return;
-    }
-
-    const description = prompt("Description (optional):") || "";
 
     const { error } = await supabaseClient
         .from("savings_transactions")
         .insert({
             topic_id: topic.id,
-            transaction_date: date,
-            transaction_type: type,
-            amount: Number(amount),
-            description: description.trim()
+            transaction_type: values.transaction_type,
+            amount,
+            transaction_date: values.transaction_date,
+            description: (values.description || "").trim()
         });
 
     if (error) {
-        alert(`Could not add transaction: ${error.message}`);
-        return;
+        return savingsShowSaveError("adding the transaction", error);
     }
 
     await loadSavingsData();
 }
 
 async function editSavingsTransaction(transaction) {
-    const amount = prompt("Edit amount:", transaction.amount);
-    if (amount === null) return;
+    const values = await savingsOpenForm({
+        title: "Edit transaction",
+        fields: [
+            {
+                name: "transaction_type",
+                label: "Transaction type",
+                type: "select",
+                options: [
+                    { value: "credit", label: "Credit — money in" },
+                    { value: "debit", label: "Debit — money out" }
+                ]
+            },
+            {
+                name: "amount",
+                label: "Amount (₹)",
+                type: "number",
+                min: 0.01,
+                step: "0.01"
+            },
+            {
+                name: "transaction_date",
+                label: "Date",
+                type: "date"
+            },
+            {
+                name: "description",
+                label: "Description (optional)",
+                type: "textarea",
+                required: false
+            }
+        ],
+        initial: {
+            transaction_type: transaction.transaction_type,
+            amount: transaction.amount,
+            transaction_date: transaction.transaction_date,
+            description: transaction.description || ""
+        },
+        saveLabel: "Save changes"
+    });
 
-    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
-        alert("Enter an amount greater than zero.");
-        return;
+    if (!values) return;
+
+    const amount = Number(values.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0 ||
+        !savingsValidDate(values.transaction_date) ||
+        !["credit", "debit"].includes(values.transaction_type)) {
+        return savingsShowSaveError("validation", {
+            message: "Check the transaction type, amount and date."
+        });
     }
-
-    const type = prompt(
-        "Type: enter credit or debit",
-        transaction.transaction_type
-    );
-    if (type === null) return;
-
-    if (!["credit", "debit"].includes(type.trim().toLowerCase())) {
-        alert("Type must be credit or debit.");
-        return;
-    }
-
-    const date = prompt("Date (YYYY-MM-DD):", transaction.transaction_date);
-    if (date === null) return;
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-        Number.isNaN(Date.parse(`${date}T00:00:00Z`))) {
-        alert("Enter the date as YYYY-MM-DD.");
-        return;
-    }
-
-    const description = prompt(
-        "Description:",
-        transaction.description || ""
-    );
-    if (description === null) return;
 
     const { error } = await supabaseClient
         .from("savings_transactions")
         .update({
-            amount: Number(amount),
-            transaction_type: type.trim().toLowerCase(),
-            transaction_date: date,
-            description: description.trim(),
+            transaction_type: values.transaction_type,
+            amount,
+            transaction_date: values.transaction_date,
+            description: (values.description || "").trim(),
             updated_at: new Date().toISOString()
         })
         .eq("id", transaction.id);
 
     if (error) {
-        alert(`Could not edit transaction: ${error.message}`);
-        return;
+        return savingsShowSaveError("updating the transaction", error);
     }
 
     await loadSavingsData();
 }
 
 async function deleteSavingsTransaction(id) {
-    if (!confirm("Delete this transaction? This cannot be undone.")) return;
+    const confirmed = await savingsOpenForm({
+        title: "Delete transaction?",
+        fields: [{
+            name: "confirmation",
+            label: "Type DELETE to confirm",
+            type: "text"
+        }],
+        saveLabel: "Delete transaction"
+    });
+
+    if (!confirmed || confirmed.confirmation.trim() !== "DELETE") return;
 
     const { error } = await supabaseClient
         .from("savings_transactions")
@@ -554,28 +902,10 @@ async function deleteSavingsTransaction(id) {
         .eq("id", id);
 
     if (error) {
-        alert(`Could not delete transaction: ${error.message}`);
-        return;
+        return savingsShowSaveError("deleting the transaction", error);
     }
 
     await loadSavingsData();
-}
-
-function showSavingsScreen() {
-    document.querySelectorAll(".app-screen").forEach(screen => {
-        screen.classList.add("hidden");
-    });
-
-    document.getElementById("savingsScreen").classList.remove("hidden");
-
-    // The expense action button should not appear on Savings.
-    addExpenseButton.classList.add("hidden");
-
-    loadSavingsData().catch(error => {
-        console.error("Savings loading failed:", error);
-        document.getElementById("savingsTopicList").innerHTML =
-            `<div class="empty-state">Could not load savings. Check your connection and Supabase policies.</div>`;
-    });
 }
 
 function setupSavings() {
