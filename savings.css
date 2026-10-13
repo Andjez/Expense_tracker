@@ -723,3 +723,65 @@
 .savings-negative {
     color: #ef2929 !important;
 }
+
+/* Keep the Savings period controls on one row */
+#savingsScreen .savings-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 12px;
+}
+
+#savingsScreen .savings-filters > * {
+    min-width: 0;
+}
+
+#savingsScreen .savings-filters select,
+#savingsScreen .savings-filters input {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+#savingsScreen #savingsMonthField,
+#savingsScreen #savingsYearField {
+    min-width: 0;
+}
+
+@media (max-width: 360px) {
+    #savingsScreen .savings-filters {
+        gap: 8px;
+        padding: 12px;
+    }
+}
+
+#savingsScreen,
+#savingsScreen .savings-header,
+#savingsScreen .savings-filters,
+#savingsScreen .savings-summary,
+#savingsScreen .savings-section-heading,
+#savingsScreen .savings-topic-list,
+#savingsScreen .savings-detail {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+}
+
+#savingsScreen .savings-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+#savingsScreen .savings-topic-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+}
+
+#savingsScreen .savings-topic-card {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+}
