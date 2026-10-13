@@ -236,3 +236,180 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
+
+
+/* =========================
+   SAVINGS — THEMED FORM MODAL
+========================= */
+
+#savingsScreen {
+    color: var(--text, inherit);
+    padding-bottom: 90px;
+}
+
+#savingsScreen input,
+#savingsScreen select,
+#savingsScreen textarea {
+    font: inherit;
+    color: var(--text, inherit);
+    background: var(--input-bg, var(--card-bg, transparent));
+    border: 1px solid var(--border-color, var(--border, #ccc));
+    border-radius: 10px;
+    padding: 11px 12px;
+    max-width: 100%;
+}
+
+#savingsScreen input:focus,
+#savingsScreen select:focus,
+#savingsScreen textarea:focus {
+    outline: 2px solid var(--primary, #64748b);
+    outline-offset: 1px;
+}
+
+.savings-summary-card,
+.savings-topic-card,
+.savings-detail-metrics div,
+.savings-transaction {
+    color: var(--text, inherit);
+    background: var(--card-bg, var(--surface, transparent));
+    border-color: var(--border-color, var(--border, #ddd));
+}
+
+.savings-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.52);
+    overflow-y: auto;
+}
+
+.savings-modal-card {
+    width: 100%;
+    max-width: 440px;
+    max-height: min(85vh, 760px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 20px;
+    border-radius: 18px;
+    color: var(--text, #222);
+    background: var(--card-bg, var(--surface, #fff));
+    border: 1px solid var(--border-color, var(--border, #ddd));
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.24);
+}
+
+.savings-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.savings-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.savings-modal-close {
+    border: 0;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    font-size: 25px;
+    cursor: pointer;
+    color: inherit;
+    background: transparent;
+}
+
+.savings-modal-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.savings-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.savings-form-field input,
+.savings-form-field select,
+.savings-form-field textarea {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.savings-form-field textarea {
+    resize: vertical;
+}
+
+.savings-form-field small {
+    color: var(--secondary-text, var(--muted, #777));
+    font-weight: 400;
+}
+
+.savings-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.savings-modal-actions button {
+    min-height: 42px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.savings-cancel-button {
+    color: var(--text, inherit);
+    background: transparent;
+    border: 1px solid var(--border-color, var(--border, #ccc));
+}
+
+.savings-save-button {
+    color: var(--button-text, #fff);
+    background: var(--primary, #334155);
+    border: 1px solid var(--primary, #334155);
+}
+
+.savings-form-error {
+    margin: 12px 0 0;
+    color: var(--danger, #b91c1c);
+    font-size: 13px;
+}
+
+.savings-transaction-actions button {
+    color: var(--text, inherit);
+    background: var(--card-bg, transparent);
+    border-color: var(--border-color, var(--border, #ddd));
+}
+
+@media (max-width: 360px) {
+    .savings-modal-card {
+        padding: 15px;
+    }
+
+    .savings-modal-actions button {
+        padding: 9px 12px;
+    }
+
+    .savings-summary-card {
+        padding: 12px;
+    }
+}
