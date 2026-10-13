@@ -39,13 +39,55 @@ function savingsMonthStart(month) {
     return `${month}-01`;
 }
 
+
 function savingsPeriodEnd() {
     if (savingsState.period === "monthly") {
         const [year, month] = savingsState.month.split("-").map(Number);
-        return new Date(year, month, 0).toISOString().slice(0, 10);
+        const lastDay = new Date(year, month, 0).getDate();
+
+        return `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
     }
 
     return `${savingsState.year}-12-31`;
+}
+
+// True when the topic has a plan or transaction in the selected period.
+function savingsTopicHasPeriodActivity(topicId) {
+    const start = savingsPeriodStart();
+    const end = savingsPeriodEnd();
+
+    const hasPlan = savingsState.plans.some(plan =>
+        plan.topic_id === topicId &&
+        plan.plan_month >= start &&
+        plan.plan_month <= end
+    );
+
+    const hasTransaction = savingsState.transactions.some(transaction =>
+        transaction.topic_id === topicId &&
+        transaction.transaction_date >= start &&
+        transaction.transaction_date <= end
+    );
+
+    return hasPlan || hasTransaction;
+}
+
+// Main list: active topics with period activity or positive carried-forward money.
+function savingsVisibleTopics() {
+    return savingsState.topics.filter(topic =>
+        topic.is_active === true &&
+        (
+            savingsTopicHasPeriodActivity(topic.id) ||
+            savingsAvailableBalanceForTopic(topic.id) > 0
+        )
+    );
+}
+
+// Topics that can be added to the selected period.
+function savingsTopicsAvailableToAdd() {
+    return savingsState.topics.filter(topic =>
+        !savingsTopicHasPeriodActivity(topic.id) ||
+        topic.is_active !== true
+    );
 }
 
 function savingsPeriodStart() {
@@ -217,7 +259,7 @@ function renderSavings() {
 
     if (!topicList || !summary || !detail) return;
 
-    const visibleTopics = savingsState.topics.filter(topic => topic.is_active);
+    const visibleTopics = savingsVisibleTopics();
 
     let totalPlan = 0;
     let totalCredits = 0;
@@ -378,12 +420,15 @@ const remainingBudget = plan - periodTotals.debits;
     </div>
 </div>
 
-        <div class="savings-actions">
-            <button type="button" id="editSavingsTopicButton">Edit topic</button>
-            <button type="button" id="setSavingsPlanButton">Set plan</button>
-            <button type="button" id="addSavingsCreditButton">+ Credit</button>
-            <button type="button" id="addSavingsDebitButton">− Debit</button>
-        </div>
+
+<div class="savings-actions">
+    <button type="button" id="editSavingsTopicButton">Edit topic</button>
+    <button type="button" id="setSavingsPlanButton">Set plan</button>
+    <button type="button" id="addSavingsCreditButton">+ Credit</button>
+    <button type="button" id="addSavingsDebitButton">− Debit</button>
+    <button type="button" id="archiveSavingsTopicButton">Archive topic</button>
+</div>
+
     `;
 
     transactionList.innerHTML = `
@@ -418,7 +463,9 @@ const remainingBudget = plan - periodTotals.debits;
 
     document.getElementById("addSavingsDebitButton").onclick =
         () => addSavingsTransaction(topic, "debit");
-
+document.getElementById("archiveSavingsTopicButton").onclick =
+    () => archiveSavingsTopic(topic);
+   
     transactionList.querySelectorAll("[data-edit-transaction]").forEach(button => {
         button.addEventListener("click", () => {
             const transaction = savingsState.transactions.find(item =>
@@ -433,6 +480,177 @@ const remainingBudget = plan - periodTotals.debits;
             deleteSavingsTransaction(button.dataset.deleteTransaction)
         );
     });
+}
+
+
+async function openSavingsTopicMenu() {
+    const choice = await savingsOpenForm({
+        title: "Add a savings topic",
+        fields: [{
+            name: "action",
+            label: "What would you like to do?",
+            type: "select",
+            options: [
+                { value: "new", label: "Create a fresh topic" },
+                { value: "existing", label: "Add an existing topic" }
+            ]
+        }],
+        initial: { action: "new" },
+        saveLabel: "Continue"
+    });
+
+    if (!choice) return;
+
+    if (choice.action === "new") {
+        await addSavingsTopic();
+    } else {
+        await addExistingSavingsTopic();
+    }
+}
+
+async function addExistingSavingsTopic() {
+    const available = savingsTopicsAvailableToAdd();
+
+    if (!available.length) {
+        await savingsOpenForm({
+            title: "No topics available",
+            fields: [{
+                name: "message",
+                label: "All topics already have activity in this period.",
+                type: "textarea",
+                required: false
+            }],
+            saveLabel: "Close"
+        });
+        return;
+    }
+
+    const defaultMonth = savingsState.period === "monthly"
+        ? savingsState.month
+        : `${savingsState.year}-01`;
+
+    const values = await savingsOpenForm({
+        title: "Add an existing topic",
+        fields: [
+            {
+                name: "topic_id",
+                label: "Choose a topic",
+                type: "select",
+                options: available.map(topic => ({
+                    value: topic.id,
+                    label: `${topic.name}${topic.is_active ? "" : " (archived)"}`
+                }))
+            },
+            {
+                name: "plan_month",
+                label: "Plan month",
+                type: "month",
+                value: defaultMonth
+            },
+            {
+                name: "planned_amount",
+                label: "Monthly plan (₹)",
+                type: "number",
+                min: 0,
+                step: "0.01",
+                value: "0"
+            }
+        ],
+        initial: {
+            topic_id: available[0].id,
+            plan_month: defaultMonth,
+            planned_amount: "0"
+        },
+        saveLabel: "Add topic"
+    });
+
+    if (!values) return;
+
+    const topic = savingsState.topics.find(item =>
+        item.id === values.topic_id
+    );
+
+    const month = values.plan_month;
+    const amount = Number(values.planned_amount);
+
+    if (
+        !topic ||
+        !/^\d{4}-(0[1-9]|1[0-2])$/.test(month) ||
+        !Number.isFinite(amount) ||
+        amount < 0
+    ) {
+        return savingsShowSaveError("validation", {
+            message: "Check the selected topic, plan month and amount."
+        });
+    }
+
+    // Reactivate archived topics without deleting or resetting their history.
+    if (topic.is_active !== true) {
+        const { error } = await supabaseClient
+            .from("savings_topics")
+            .update({
+                is_active: true,
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", topic.id);
+
+        if (error) {
+            return savingsShowSaveError("restoring the topic", error);
+        }
+    }
+
+    // This is a monthly plan, not a balance carry-forward transaction.
+    const { error: planError } = await supabaseClient
+        .from("savings_month_plans")
+        .upsert({
+            topic_id: topic.id,
+            plan_month: `${month}-01`,
+            planned_amount: amount,
+            updated_at: new Date().toISOString()
+        }, {
+            onConflict: "topic_id,plan_month"
+        });
+
+    if (planError) {
+        return savingsShowSaveError("saving the monthly plan", planError);
+    }
+
+    savingsState.selectedTopicId = topic.id;
+    await loadSavingsData();
+}
+
+async function archiveSavingsTopic(topic) {
+    const confirmation = await savingsOpenForm({
+        title: "Archive topic?",
+        fields: [{
+            name: "confirmation",
+            label: `Type ARCHIVE to hide "${topic.name}". Its history will be preserved.`,
+            type: "text"
+        }],
+        saveLabel: "Archive topic"
+    });
+
+    if (
+        !confirmation ||
+        confirmation.confirmation.trim() !== "ARCHIVE"
+    ) {
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from("savings_topics")
+        .update({
+            is_active: false,
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", topic.id);
+
+    if (error) {
+        return savingsShowSaveError("archiving the topic", error);
+    }
+
+    savingsState.selectedTopicId = null;
+    await loadSavingsData();
 }
 
 /* =========================================================
@@ -1045,10 +1263,12 @@ function setupSavings() {
         loadSavingsData().catch(console.error);
     });
 
-    document.getElementById("addSavingsTopicButton")
-        .addEventListener("click", () => {
-            addSavingsTopic().catch(console.error);
+document.getElementById("addSavingsTopicButton")
+    .addEventListener("click", () => {
+        openSavingsTopicMenu().catch(error => {
+            savingsShowSaveError("opening the topic menu", error);
         });
+    });
 
     document.getElementById("backToSavingsTopics")
         .addEventListener("click", () => {
