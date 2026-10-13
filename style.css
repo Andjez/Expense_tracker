@@ -2868,3 +2868,49 @@ body.dark-theme .savings-modal-card small {
     color: #d0d0d0;
 }
 
+/*-----report panel----*/
+
+/* Reports filters — match the app's existing dark theme */
+body.dark-theme #reportsScreen .report-filters-card {
+    background: #1c1c1c !important;
+    color: #f1f1f1 !important;
+    border-color: #2b2b2b !important;
+    box-shadow: none !important;
+}
+
+/* Monthly / Yearly selector background */
+body.dark-theme #reportsScreen .report-mode-switch {
+    background: #121212 !important;
+    border-color: #2b2b2b !important;
+}
+
+/* Inactive Monthly / Yearly buttons */
+body.dark-theme #reportsScreen .report-mode-button:not(.active) {
+    background: transparent !important;
+    color: #999999 !important;
+}
+
+/* Selected Monthly / Yearly button */
+body.dark-theme #reportsScreen .report-mode-button.active {
+    background: #292929 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+/* Month and Year labels */
+body.dark-theme #reportsScreen .report-filter-field label {
+    color: #999999 !important;
+}
+
+/* Month and Year dropdowns */
+body.dark-theme #reportsScreen .report-filter-field select {
+    background-color: #292929 !important;
+    color: #f1f1f1 !important;
+    border-color: #444444 !important;
+}
+
+/* Dropdown options */
+body.dark-theme #reportsScreen .report-filter-field select option {
+    background: #292929 !important;
+    color: #f1f1f1 !important;
+}
