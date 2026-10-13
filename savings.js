@@ -361,6 +361,7 @@ async function loadSavingsData() {
     renderSavings();
 }
 
+
 function renderSavings() {
     const topicList = document.getElementById("savingsTopicList");
     const summary = document.getElementById("savingsSummary");
@@ -408,24 +409,21 @@ function renderSavings() {
     topicList.innerHTML = visibleTopics.length
         ? visibleTopics.map(topic => {
             const plan = savingsPlanForTopic(topic.id);
+
             const periodTotals = savingsTotals(
                 savingsPeriodTransactions(topic.id)
             );
+
             const balance = savingsAvailableBalanceForTopic(topic.id);
-            const remainingBudget = plan - periodTotals.debits;
-            const overspent = remainingBudget < 0;
 
             return `
-                <button class="savings-topic-card"
+                <button
+                    class="savings-topic-card"
                     type="button"
-                    data-savings-topic="${savingsEscape(topic.id)}">
-
+                    data-savings-topic="${savingsEscape(topic.id)}"
+                >
                     <span class="savings-topic-title">
                         ${savingsEscape(topic.name)}
-                    </span>
-
-                    <span class="savings-topic-description">
-                        ${savingsEscape(topic.description || "")}
                     </span>
 
                     ${savingsProgressHTML(
@@ -434,42 +432,18 @@ function renderSavings() {
                         topic.name
                     )}
 
-                    <span class="savings-topic-metrics">
-                        <span>
-                            Planned
-                            <strong>${savingsMoney(plan)}</strong>
-                        </span>
-                        <span>
-                            Credits
-                            <strong>${savingsMoney(periodTotals.credits)}</strong>
-                        </span>
-                        <span>
-                            Spent
-                            <strong>${savingsMoney(periodTotals.debits)}</strong>
-                        </span>
-                        <span>
-                            Remaining budget
-                            <strong class="${remainingBudget < 0
-                                ? "savings-negative"
-                                : "savings-positive"}">
-                                ${savingsMoney(remainingBudget)}
-                            </strong>
-                        </span>
-                        <span>
-                            Available balance
-                            <strong class="${balance < 0
-                                ? "savings-negative"
-                                : "savings-positive"}">
-                                ${savingsMoney(balance)}
-                            </strong>
-                        </span>
+                    <span class="savings-topic-balance">
+                        <span>Available balance</span>
+                        <strong class="${balance < 0
+                            ? "savings-negative"
+                            : "savings-positive"}">
+                            ${savingsMoney(balance)}
+                        </strong>
                     </span>
 
-                    ${overspent && plan > 0
-                        ? `<span class="savings-overspent">Debits exceed this period's plan</span>`
-                        : ""}
-
-                    <span class="savings-open-hint">View transactions →</span>
+                    <span class="savings-open-hint">
+                        View transactions →
+                    </span>
                 </button>
             `;
         }).join("")
