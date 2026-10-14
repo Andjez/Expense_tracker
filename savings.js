@@ -13,9 +13,11 @@ const savingsState = {
     selectedTopicId: null,
     period: "monthly",
     month: new Date().toISOString().slice(0, 7),
-   spaces: [],
+spaces: [],
 activeSpaceId: null,
 pendingSpaceId: null,
+spaceSelectionTouched: false,
+creatingSpace: false,
     year: String(new Date().getFullYear())
 };
 
@@ -79,69 +81,72 @@ function renderSavingsSpaceControls() {
     const container = savingsEnsureSpaceControls();
 
     if (!container) return;
+const current = savingsCurrentSpace();
 
-    const current = savingsCurrentSpace();
-
-    if (
-        !savingsState.pendingSpaceId ||
-        !savingsState.spaces.some(
-            space => space.id === savingsState.pendingSpaceId
-        )
-    ) {
-        savingsState.pendingSpaceId = savingsState.activeSpaceId;
-    }
-
-    const pending = savingsState.spaces.find(
+// Preserve the active space as the default selection.
+if (
+    !savingsState.creatingSpace &&
+    !savingsState.spaces.some(
         space => space.id === savingsState.pendingSpaceId
-    );
+    )
+) {
+    savingsState.pendingSpaceId = savingsState.activeSpaceId;
+}
 
-    const isCreating = savingsState.pendingSpaceId === "__create__";
-    const isPending = pending &&
-        pending.id !== savingsState.activeSpaceId;
+const pending = savingsState.spaces.find(
+    space => space.id === savingsState.pendingSpaceId
+);
 
-    container.innerHTML = `
-        <div class="savings-space-picker">
-            <label for="savingsSpaceSelect">Money space</label>
+const isCreating = savingsState.creatingSpace;
 
-            <select id="savingsSpaceSelect">
-                ${savingsState.spaces.map(space => `
-                    <option
-                        value="${savingsEscape(space.id)}"
-                        ${space.id === savingsState.pendingSpaceId
-                            ? "selected"
-                            : ""}
-                    >
-                        ${savingsEscape(space.name)}
-                        ${space.id === savingsState.activeSpaceId
-                            ? " (current)"
-                            : ""}
-                    </option>
-                `).join("")}
+container.innerHTML = `
+    <div class="savings-space-picker">
+        <label for="savingsSpaceSelect">Money space</label>
 
-                <option value="__create__"
-                    ${isCreating ? "selected" : ""}>
-                    + Create new
-                </option>
-            </select>
-        </div>
-
-        ${isCreating ? `
-            <div class="savings-space-create">
-                <label for="savingsNewSpaceName">New space name</label>
-                <input
-                    id="savingsNewSpaceName"
-                    type="text"
-                    maxlength="100"
-                    placeholder="e.g. Wife's Salary"
+        <select id="savingsSpaceSelect">
+            ${savingsState.spaces.map(space => `
+                <option
+                    value="${savingsEscape(space.id)}"
+                    ${space.id === savingsState.pendingSpaceId
+                        ? "selected"
+                        : ""}
                 >
-                <button type="button" id="savingsCreateSpaceButton">
-                    Create
-                </button>
-                <button type="button" id="savingsCancelSpaceButton">
-                    Cancel
-                </button>
-            </div>
-        ` : isPending ? `
+                    ${savingsEscape(space.name)}
+                    ${space.id === savingsState.activeSpaceId
+                        ? " (current)"
+                        : ""}
+                </option>
+            `).join("")}
+
+            <option value="__create__"
+                ${isCreating ? "selected" : ""}>
+                + Create new
+            </option>
+        </select>
+    </div>
+
+    ${isCreating ? `
+        <div class="savings-space-create">
+            <label for="savingsNewSpaceName">New space name</label>
+            <input
+                id="savingsNewSpaceName"
+                type="text"
+                maxlength="100"
+                placeholder="e.g. Wife's Salary"
+            >
+            <button type="button" id="savingsCreateSpaceButton">
+                Create
+            </button>
+            <button type="button" id="savingsCancelSpaceButton">
+                Cancel
+            </button>
+        </div>
+    ` : `
+        <p class="savings-space-current">
+            Current space: ${savingsEscape(current?.name || "None")}
+        </p>
+
+        ${pending ? `
             <div class="savings-space-actions">
                 <button type="button" id="savingsSetSpaceButton">
                     Set
@@ -150,68 +155,62 @@ function renderSavingsSpaceControls() {
                     Edit
                 </button>
             </div>
-        ` : `
-            <p class="savings-space-current">
-                Current space: ${savingsEscape(current?.name || "None")}
-            </p>
-            <div class="savings-space-actions">
-                <button type="button" id="savingsEditSpaceButton">
-                    Edit
-                </button>
-            </div>
-        `}
-    `;
+        ` : ""}
+    `}
+`;
 
-    const select = container.querySelector("#savingsSpaceSelect");
+const select = container.querySelector("#savingsSpaceSelect");
 
-    select.addEventListener("change", () => {
-        savingsState.pendingSpaceId = select.value;
-        renderSavingsSpaceControls();
+select.addEventListener("change", () => {
+    handleSavingsSpaceChange(select.value);
+});
+
+container.querySelector("#savingsSetSpaceButton")
+    ?.addEventListener("click", () => {
+        setSavingsActiveSpace(savingsState.pendingSpaceId);
     });
 
-    container.querySelector("#savingsSetSpaceButton")
-        ?.addEventListener("click", () => {
-            setSavingsActiveSpace(savingsState.pendingSpaceId);
-        });
+container.querySelector("#savingsEditSpaceButton")
+    ?.addEventListener("click", () => {
+        editSavingsSpace(savingsState.pendingSpaceId);
+    });
 
-    container.querySelector("#savingsEditSpaceButton")
-        ?.addEventListener("click", () => {
-            editSavingsSpace(savingsState.pendingSpaceId);
-        });
+container.querySelector("#savingsCreateSpaceButton")
+    ?.addEventListener("click", createSavingsSpace);
 
-    container.querySelector("#savingsCreateSpaceButton")
-        ?.addEventListener("click", createSavingsSpace);
-
-    container.querySelector("#savingsCancelSpaceButton")
-        ?.addEventListener("click", () => {
-            savingsState.pendingSpaceId = savingsState.activeSpaceId;
-            renderSavingsSpaceControls();
-        });
+container.querySelector("#savingsCancelSpaceButton")
+    ?.addEventListener("click", () => {
+        savingsState.creatingSpace = false;
+        savingsState.pendingSpaceId = savingsState.activeSpaceId;
+        renderSavingsSpaceControls();
+    });
 }
 
 async function setSavingsActiveSpace(spaceId) {
     const space = savingsState.spaces.find(item => item.id === spaceId);
 
-    if (!space) return;
+   if (!space) return;
 
-    savingsState.activeSpaceId = space.id;
-    savingsState.pendingSpaceId = space.id;
-    savingsState.selectedTopicId = null;
-
-    try {
-        localStorage.setItem(SAVINGS_ACTIVE_SPACE_KEY, space.id);
-    } catch (error) {
-        console.warn("Could not remember the active Savings space:", error);
-    }
-
-    renderSavingsSpaceControls();
-
-    try {
-        await loadSavingsData();
-    } catch (error) {
-        console.error("Failed to switch Savings space:", error);
-        await savingsShowSaveError("loading the selected space", error);
-    }
+      savingsState.activeSpaceId = space.id;
+      savingsState.pendingSpaceId = space.id;
+      savingsState.creatingSpace = false;
+      savingsState.spaceSelectionTouched = false;
+      savingsState.selectedTopicId = null;
+      
+      try {
+          localStorage.setItem(SAVINGS_ACTIVE_SPACE_KEY, space.id);
+      } catch (error) {
+          console.warn("Could not remember the active Savings space:", error);
+      }
+      
+      renderSavingsSpaceControls();
+      
+      try {
+          await loadSavingsData();
+      } catch (error) {
+          console.error("Failed to switch Savings space:", error);
+          await savingsShowSaveError("loading the selected space", error);
+}
 }
 
 async function createSavingsSpace() {
@@ -249,6 +248,8 @@ async function createSavingsSpace() {
 
         savingsState.spaces.push(space);
         savingsState.pendingSpaceId = space.id;
+       savingsState.creatingSpace = false;
+savingsState.spaceSelectionTouched = false;
 
         // Creating a space does not activate it automatically.
         renderSavingsSpaceControls();
@@ -337,6 +338,21 @@ function savingsPeriodEnd() {
 
     return `${savingsState.year}-12-31`;
 }
+
+function handleSavingsSpaceChange(value) {
+   if (value === "create") {
+      savingsState.creatingSpace = true;
+      renderSavingsSpaceControls();
+      document.getElementById("savingsNewSpaceName")?.focus();
+   return;
+   }
+   
+      savingsState.creatingSpace = false;
+      savingsState.pendingSpaceId = value;
+   
+      renderSavingsSpaceControls();
+   
+   }
 
 function savingsPeriodLabel() {
     if (savingsState.period === "monthly") {
