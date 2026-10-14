@@ -13,6 +13,9 @@ const savingsState = {
     selectedTopicId: null,
     period: "monthly",
     month: new Date().toISOString().slice(0, 7),
+   spaces: [],
+activeSpaceId: null,
+pendingSpaceId: null,
     year: String(new Date().getFullYear())
 };
 
@@ -34,6 +37,284 @@ function savingsEscape(value) {
         '"': "&quot;",
         "'": "&#39;"
     })[char]);
+}
+
+/* =========================================================
+   SAVINGS SPACES
+   These spaces apply only to the Savings feature.
+   ========================================================= */
+
+const SAVINGS_ACTIVE_SPACE_KEY = "savingsActiveSpaceId";
+
+function savingsCurrentSpace() {
+    return savingsState.spaces.find(
+        space => space.id === savingsState.activeSpaceId
+    ) || null;
+}
+
+function savingsEnsureSpaceControls() {
+    let container = document.getElementById("savingsSpaceControls");
+
+    if (container) return container;
+
+    container = document.createElement("div");
+    container.id = "savingsSpaceControls";
+    container.className = "savings-space-controls";
+
+    const topicList = document.getElementById("savingsTopicList");
+    const heading = document.querySelector(
+        "#savingsScreen .savings-section-heading"
+    );
+
+    const anchor = heading || topicList;
+
+    if (anchor?.parentNode) {
+        anchor.parentNode.insertBefore(container, anchor);
+    }
+
+    return container;
+}
+
+function renderSavingsSpaceControls() {
+    const container = savingsEnsureSpaceControls();
+
+    if (!container) return;
+
+    const current = savingsCurrentSpace();
+
+    if (
+        !savingsState.pendingSpaceId ||
+        !savingsState.spaces.some(
+            space => space.id === savingsState.pendingSpaceId
+        )
+    ) {
+        savingsState.pendingSpaceId = savingsState.activeSpaceId;
+    }
+
+    const pending = savingsState.spaces.find(
+        space => space.id === savingsState.pendingSpaceId
+    );
+
+    const isCreating = savingsState.pendingSpaceId === "__create__";
+    const isPending = pending &&
+        pending.id !== savingsState.activeSpaceId;
+
+    container.innerHTML = `
+        <div class="savings-space-picker">
+            <label for="savingsSpaceSelect">Money space</label>
+
+            <select id="savingsSpaceSelect">
+                ${savingsState.spaces.map(space => `
+                    <option
+                        value="${savingsEscape(space.id)}"
+                        ${space.id === savingsState.pendingSpaceId
+                            ? "selected"
+                            : ""}
+                    >
+                        ${savingsEscape(space.name)}
+                        ${space.id === savingsState.activeSpaceId
+                            ? " (current)"
+                            : ""}
+                    </option>
+                `).join("")}
+
+                <option value="__create__"
+                    ${isCreating ? "selected" : ""}>
+                    + Create new
+                </option>
+            </select>
+        </div>
+
+        ${isCreating ? `
+            <div class="savings-space-create">
+                <label for="savingsNewSpaceName">New space name</label>
+                <input
+                    id="savingsNewSpaceName"
+                    type="text"
+                    maxlength="100"
+                    placeholder="e.g. Wife's Salary"
+                >
+                <button type="button" id="savingsCreateSpaceButton">
+                    Create
+                </button>
+                <button type="button" id="savingsCancelSpaceButton">
+                    Cancel
+                </button>
+            </div>
+        ` : isPending ? `
+            <div class="savings-space-actions">
+                <button type="button" id="savingsSetSpaceButton">
+                    Set
+                </button>
+                <button type="button" id="savingsEditSpaceButton">
+                    Edit
+                </button>
+            </div>
+        ` : `
+            <p class="savings-space-current">
+                Current space: ${savingsEscape(current?.name || "None")}
+            </p>
+            <div class="savings-space-actions">
+                <button type="button" id="savingsEditSpaceButton">
+                    Edit
+                </button>
+            </div>
+        `}
+    `;
+
+    const select = container.querySelector("#savingsSpaceSelect");
+
+    select.addEventListener("change", () => {
+        savingsState.pendingSpaceId = select.value;
+        renderSavingsSpaceControls();
+    });
+
+    container.querySelector("#savingsSetSpaceButton")
+        ?.addEventListener("click", () => {
+            setSavingsActiveSpace(savingsState.pendingSpaceId);
+        });
+
+    container.querySelector("#savingsEditSpaceButton")
+        ?.addEventListener("click", () => {
+            editSavingsSpace(savingsState.pendingSpaceId);
+        });
+
+    container.querySelector("#savingsCreateSpaceButton")
+        ?.addEventListener("click", createSavingsSpace);
+
+    container.querySelector("#savingsCancelSpaceButton")
+        ?.addEventListener("click", () => {
+            savingsState.pendingSpaceId = savingsState.activeSpaceId;
+            renderSavingsSpaceControls();
+        });
+}
+
+async function setSavingsActiveSpace(spaceId) {
+    const space = savingsState.spaces.find(item => item.id === spaceId);
+
+    if (!space) return;
+
+    savingsState.activeSpaceId = space.id;
+    savingsState.pendingSpaceId = space.id;
+    savingsState.selectedTopicId = null;
+
+    try {
+        localStorage.setItem(SAVINGS_ACTIVE_SPACE_KEY, space.id);
+    } catch (error) {
+        console.warn("Could not remember the active Savings space:", error);
+    }
+
+    renderSavingsSpaceControls();
+
+    try {
+        await loadSavingsData();
+    } catch (error) {
+        console.error("Failed to switch Savings space:", error);
+        await savingsShowSaveError("loading the selected space", error);
+    }
+}
+
+async function createSavingsSpace() {
+    const input = document.getElementById("savingsNewSpaceName");
+    const name = input?.value.trim();
+
+    if (!name) {
+        input?.focus();
+        return;
+    }
+
+    const duplicate = savingsState.spaces.some(
+        space => space.name.trim().toLowerCase() === name.toLowerCase()
+    );
+
+    if (duplicate) {
+        await savingsShowSaveError("creating the space", {
+            message: "A space with that name already exists. Please choose another name."
+        });
+        return;
+    }
+
+    const button = document.getElementById("savingsCreateSpaceButton");
+
+    if (button) button.disabled = true;
+
+    try {
+        const { data: space, error } = await supabaseClient
+            .from("savings_spaces")
+            .insert({ name })
+            .select("*")
+            .single();
+
+        if (error) throw error;
+
+        savingsState.spaces.push(space);
+        savingsState.pendingSpaceId = space.id;
+
+        // Creating a space does not activate it automatically.
+        renderSavingsSpaceControls();
+    } catch (error) {
+        await savingsShowSaveError("creating the space", error);
+    } finally {
+        if (button) button.disabled = false;
+    }
+}
+
+async function editSavingsSpace(spaceId) {
+    const space = savingsState.spaces.find(item => item.id === spaceId);
+
+    if (!space) return;
+
+    const values = await savingsOpenForm({
+        title: "Edit money space",
+        fields: [{
+            name: "name",
+            label: "Space name",
+            maxlength: 100
+        }],
+        initial: { name: space.name },
+        saveLabel: "Save name"
+    });
+
+    if (!values) return;
+
+    const name = values.name.trim();
+
+    if (!name) {
+        return savingsShowSaveError("renaming the space", {
+            message: "The space name cannot be empty."
+        });
+    }
+
+    const duplicate = savingsState.spaces.some(
+        item => item.id !== space.id &&
+            item.name.trim().toLowerCase() === name.toLowerCase()
+    );
+
+    if (duplicate) {
+        return savingsShowSaveError("renaming the space", {
+            message: "Another space already uses that name."
+        });
+    }
+
+    const { data, error } = await supabaseClient
+        .from("savings_spaces")
+        .update({
+            name,
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", space.id)
+        .select("*")
+        .single();
+
+    if (error) {
+        return savingsShowSaveError("renaming the space", error);
+    }
+
+    savingsState.spaces = savingsState.spaces.map(item =>
+        item.id === data.id ? data : item
+    );
+
+    renderSavingsSpaceControls();
 }
 
 function savingsMonthStart(month) {
@@ -313,7 +594,61 @@ function showSavingsScreen() {
     });
 }
 
+
 async function loadSavingsData() {
+    const spacesResult = await supabaseClient
+        .from("savings_spaces")
+        .select("*")
+        .order("created_at");
+
+    if (spacesResult.error) throw spacesResult.error;
+
+    savingsState.spaces = spacesResult.data || [];
+
+    if (!savingsState.spaces.length) {
+        throw new Error(
+            "No Savings spaces found. Check the savings_spaces table."
+        );
+    }
+
+    const validSpaceIds = savingsState.spaces.map(space => space.id);
+
+    if (!validSpaceIds.includes(savingsState.activeSpaceId)) {
+        let storedSpaceId = null;
+
+        try {
+            storedSpaceId = localStorage.getItem(
+                SAVINGS_ACTIVE_SPACE_KEY
+            );
+        } catch (error) {
+            console.warn("Could not read the saved Savings space:", error);
+        }
+
+        savingsState.activeSpaceId = validSpaceIds.includes(storedSpaceId)
+            ? storedSpaceId
+            : savingsState.spaces[0].id;
+    }
+
+    if (
+        !validSpaceIds.includes(savingsState.pendingSpaceId) &&
+        savingsState.pendingSpaceId !== "__create__"
+    ) {
+        savingsState.pendingSpaceId = savingsState.activeSpaceId;
+    }
+
+    try {
+        localStorage.setItem(
+            SAVINGS_ACTIVE_SPACE_KEY,
+            savingsState.activeSpaceId
+        );
+    } catch (error) {
+        console.warn("Could not remember the active Savings space:", error);
+    }
+
+    renderSavingsSpaceControls();
+
+    const spaceId = savingsState.activeSpaceId;
+
     const [
         topicsResult,
         plansResult,
@@ -323,16 +658,19 @@ async function loadSavingsData() {
         supabaseClient
             .from("savings_topics")
             .select("*")
+            .eq("space_id", spaceId)
             .order("name"),
 
         supabaseClient
             .from("savings_month_plans")
             .select("*")
+            .eq("space_id", spaceId)
             .order("plan_month"),
 
         supabaseClient
             .from("savings_transactions")
             .select("*")
+            .eq("space_id", spaceId)
             .order("transaction_date", { ascending: false }),
 
         supabaseClient
@@ -349,10 +687,7 @@ async function loadSavingsData() {
     savingsState.transactions = transactionsResult.data || [];
 
     if (usersResult.error) {
-        console.warn(
-            "Savings: couldn't load user names:",
-            usersResult.error
-        );
+        console.warn("Savings: couldn't load user names:", usersResult.error);
         savingsState.users = [];
     } else {
         savingsState.users = usersResult.data || [];
@@ -360,6 +695,7 @@ async function loadSavingsData() {
 
     renderSavings();
 }
+
 
 
 function renderSavings() {
@@ -739,6 +1075,7 @@ async function addExistingSavingsTopic() {
     const { error: planError } = await supabaseClient
         .from("savings_month_plans")
         .upsert({
+           space_id: savingsState.activeSpaceId,
             topic_id: topic.id,
             plan_month: `${month}-01`,
             planned_amount: amount,
@@ -779,7 +1116,8 @@ async function archiveSavingsTopic(topic) {
             is_active: false,
             updated_at: new Date().toISOString()
         })
-        .eq("id", topic.id);
+        .eq("id", topic.id)
+.eq("space_id", savingsState.activeSpaceId);
 
     if (error) {
         return savingsShowSaveError("archiving the topic", error);
@@ -1011,7 +1349,11 @@ async function addSavingsTopic() {
 
     const { data: topic, error: topicError } = await supabaseClient
         .from("savings_topics")
-        .insert({ name, description })
+        .insert({
+    name,
+    description,
+    space_id: savingsState.activeSpaceId
+})
         .select()
         .single();
 
@@ -1022,6 +1364,7 @@ async function addSavingsTopic() {
     const { error: planError } = await supabaseClient
         .from("savings_month_plans")
         .upsert({
+            space_id: savingsState.activeSpaceId,
             topic_id: topic.id,
             plan_month: `${planMonth}-01`,
             planned_amount: plannedAmount,
@@ -1105,7 +1448,8 @@ async function editSavingsTopic(topic) {
             description: (values.description || "").trim(),
             updated_at: new Date().toISOString()
         })
-        .eq("id", topic.id);
+        .eq("id", topic.id)
+.eq("space_id", savingsState.activeSpaceId);
 
     if (topicError) {
         return savingsShowSaveError("updating the topic", topicError);
@@ -1114,6 +1458,7 @@ async function editSavingsTopic(topic) {
     const { error: planError } = await supabaseClient
         .from("savings_month_plans")
         .upsert({
+            space_id: savingsState.activeSpaceId,
             topic_id: topic.id,
             plan_month: `${planMonth}-01`,
             planned_amount: plannedAmount,
@@ -1179,6 +1524,7 @@ async function setSavingsPlan(topic) {
     const { error } = await supabaseClient
         .from("savings_month_plans")
         .upsert({
+           space_id: savingsState.activeSpaceId,
             topic_id: topic.id,
             plan_month: `${month}-01`,
             planned_amount: amount,
@@ -1260,6 +1606,7 @@ async function addSavingsTransaction(topic, type) {
     const { error } = await supabaseClient
         .from("savings_transactions")
         .insert({
+           space_id: savingsState.activeSpaceId,
             topic_id: topic.id,
             transaction_type: values.transaction_type,
             amount,
@@ -1337,7 +1684,8 @@ async function editSavingsTransaction(transaction) {
             description: (values.description || "").trim(),
             updated_at: new Date().toISOString()
         })
-        .eq("id", transaction.id);
+        .eq("id", transaction.id)
+.eq("space_id", savingsState.activeSpaceId);
 
     if (error) {
         return savingsShowSaveError("updating the transaction", error);
@@ -1359,10 +1707,11 @@ async function deleteSavingsTransaction(id) {
 
     if (!confirmed || confirmed.confirmation.trim() !== "DELETE") return;
 
-    const { error } = await supabaseClient
-        .from("savings_transactions")
-        .delete()
-        .eq("id", id);
+const { error } = await supabaseClient
+    .from("savings_transactions")
+    .delete()
+    .eq("id", id)
+    .eq("space_id", savingsState.activeSpaceId);
 
     if (error) {
         return savingsShowSaveError("deleting the transaction", error);
